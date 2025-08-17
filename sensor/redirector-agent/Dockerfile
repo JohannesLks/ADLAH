@@ -1,17 +1,26 @@
-# Use an official Python runtime as a parent image
+# SPDX-License-Identifier: GPL-3.0-or-later
+# ADLAH - Adaptive Deep Learning Anomaly Detection Honeynet <https://github.com/JohannesLks/ADLAH/>
+# Copyright (C) 2025  Lukas Johannes Möller
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 FROM python:3.9-slim
 
-# Set the working directory in the container
 WORKDIR /usr/src/app
 
-# Copy the requirements file into the container at /usr/src/app
 COPY requirements.txt ./
 
-# Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application's code into the container
 COPY agent.py .
 
-# Define the command to run the application
 CMD ["python", "./agent.py"]
