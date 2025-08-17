@@ -1,4 +1,19 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# ADLAH - Adaptive Deep Learning Anomaly Detection Honeynet <https://github.com/JohannesLks/ADLAH/>
+# Copyright (C) 2025  Lukas Johannes Möller
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 set -euo pipefail
 
 # =====================================
@@ -59,7 +74,6 @@ copy_certificates() {
 }
 
 start_temp_nginx() {
-    # If a production nginx already listens on :80, reuse it (assumes webroot mapping already accessible)
     if docker ps --format '{{.Names}}' | grep -qx 'hive-nginx-1'; then
         log "Detected running hive-nginx-1 on port 80 – skipping temp container. Ensure webroot served."
         return 0
