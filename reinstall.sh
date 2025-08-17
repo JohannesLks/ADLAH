@@ -12,7 +12,10 @@ SENSOR_USER=lukas
 HIVE_IP=10.1.0.10
 CLUSTER_IP=10.1.0.15
 # Username used for Kibana / nginx basic auth (htpasswd). System user stays 'lukas'.
+# Username for Kibana/nginx basic auth ONLY
 KIBANA_AUTH_USER=adlah
+# System user for SSH/cluster/sensor operations
+SYSTEM_USER=lukas
 
 # =====================================
 # Helper Functions
@@ -58,8 +61,9 @@ deploy_cluster() {
     log "Step 2: Deploying Cluster..."
     # The directory is created by deploy.sh, no need to create it here.
     sudo rm -rf $HOME/hive/cluster_kubeconfig/config_host
+    # Cluster deployment must use system SSH user, not Kibana auth user
     ~/ADLAH/deploy.sh --cluster --ip $CLUSTER_IP \
-    --user "$KIBANA_AUTH_USER" --grafana-pass "$PASS"
+        --user "$SYSTEM_USER" --grafana-pass "$PASS"
 }
 
 # Step 3: Setup Sensor
@@ -81,7 +85,7 @@ setup_sensor() {
 deploy_sensor() {
     log "Step 4: Deploying Sensor..."
     ~/ADLAH/deploy.sh --sensor --ip $SENSOR_IP \
-    --user lukas  # Sensor deploy still uses system user for SSH
+        --user "$SYSTEM_USER"  # Sensor deploy uses system SSH user
 }
 # Step 4: Start Sensor Containers
 start_sensor_containers() {
