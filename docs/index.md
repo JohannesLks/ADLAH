@@ -33,12 +33,12 @@ cd ADLAH
 
 ## Documentation
 
-* [Installation](install.md) — step-by-step setup for Hive, Sensor, Cluster
-* [Usage](usage.md) — working with ADLAH, restart & rotation workflows
-* [Architecture](architecture.md) — system design and data flow diagrams
-* [Security](security.md) — TLS, authentication, secrets handling
-* [Troubleshooting](troubleshooting.md) — common problems and solutions
-* [FAQ](faq.md) — frequently asked questions
+#* [Installation](install.md) — step-by-step setup for Hive, Sensor, Cluster
+#* [Usage](usage.md) — working with ADLAH, restart & rotation workflows
+#* [Architecture](architecture.md) — system design and data flow diagrams
+#* [Security](security.md) — TLS, authentication, secrets handling
+#* [Troubleshooting](troubleshooting.md) — common problems and solutions
+#* [FAQ](faq.md) — frequently asked questions
 
 ## Resources
 
