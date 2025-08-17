@@ -1,4 +1,4 @@
-# ADLAH — Adaptive Deep Learning Anomaly Detection Honeynet
+# ADLAH - Adaptive Deep Learning Anomaly Detection Honeynet
 
 Welcome to the documentation for **ADLAH**, an adaptive honeynet framework designed for **real-time anomaly detection and dynamic threat behavior analysis**.
 
@@ -26,6 +26,7 @@ git clone https://github.com/JohannesLks/ADLAH.git
 cd ADLAH
 ````
 >Adjust vars in `reinstall.sh` 
+
 ```bash
 ./reinstall.sh
 ````
