@@ -1,3 +1,18 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# ADLAH - Adaptive Deep Learning Anomaly Detection Honeynet <https://github.com/JohannesLks/ADLAH/>
+# Copyright (C) 2025  Lukas Johannes Möller
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import os
 import redis
 import time
@@ -7,25 +22,19 @@ import subprocess
 import threading
 from typing import Dict
 
-# --- Configuration ---
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 REDIS_URL = os.environ.get("REDIS_URL", "redis://10.1.0.10:6379/0")
 REDIS_COMMAND_CHANNEL = "redirection-commands"
 SENSOR_IP = os.environ.get("SENSOR_IP", "10.1.0.5")
 MAINTENANCE_INTERVAL_SEC = 10
 
-# --- Logging Setup ---
 logging.basicConfig(level=LOG_LEVEL,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# --- State ---
-# Thread-safe dictionary to store active rules and their expiry times
-# Key: attacker_ip, Value: {"pod_address": "ip:port", "expires_at": timestamp}
 active_rules: Dict[str, dict] = {}
 lock = threading.Lock()
 
-# --- Helper Functions ---
 def run_command(command, check=True):
     """Executes a shell command and logs its output."""
     try:
@@ -52,17 +61,15 @@ def apply_redirect_rule(attacker_ip: str, honeypod_ip: str, honeypod_port: int, 
     logger.info(f"{'Adding' if action == 'add' else 'Removing'} redirect for {attacker_ip} -> {pod_address}")
     
     op_flag = "-I" if action == "add" else "-D"
-    chain_pos = "1" if action == "add" else "" # Position only needed for insertion
+    chain_pos = "1" if action == "add" else ""
 
-    # DNAT rule: change destination for incoming packets
     dnat_cmd = [
         "iptables", "-t", "nat", op_flag, "PREROUTING",
         *(filter(None, [chain_pos])), # Add position only for -I
         "-s", attacker_ip, "-p", "tcp", "--dport", "22",
         "-j", "DNAT", "--to-destination", pod_address
     ]
-    
-    # SNAT rule: change source for outgoing packets so replies are routed correctly
+
     snat_cmd = [
         "iptables", "-t", "nat", op_flag, "POSTROUTING",
         *(filter(None, [chain_pos])),
@@ -70,7 +77,6 @@ def apply_redirect_rule(attacker_ip: str, honeypod_ip: str, honeypod_port: int, 
         "-j", "SNAT", "--to-source", SENSOR_IP
     ]
 
-    # Execute commands; for deletion, we don't 'check' because the rule might already be gone
     run_command(dnat_cmd, check=(action == 'add'))
     run_command(snat_cmd, check=(action == 'add'))
 
@@ -140,12 +146,10 @@ def main():
     
     flush_all_rules()
 
-    # Start the background cleanup thread
     cleanup_thread = threading.Thread(target=cleanup_expired_rules, daemon=True)
     cleanup_thread.start()
     logger.info(f"Started rule cleanup thread with {MAINTENANCE_INTERVAL_SEC}s interval.")
 
-    # Connect to Redis
     while True:
         try:
             redis_client = redis.Redis.from_url(REDIS_URL, decode_responses=True)
@@ -161,7 +165,7 @@ def main():
             time.sleep(5)
         except Exception as e:
             logger.error(f"An unexpected error occurred in main loop: {e}", exc_info=True)
-            time.sleep(5) # Avoid rapid-fire loop on unexpected errors
+            time.sleep(5)
 
 if __name__ == "__main__":
     main()
