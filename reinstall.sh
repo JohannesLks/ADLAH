@@ -75,7 +75,7 @@ setup_sensor() {
         git fetch --all && 
         git checkout dev && 
         git pull && 
-    chmod +x ./install.sh && ./install.sh --type sensor --user lukas \
+    chmod +x ./install.sh && ./install.sh --type sensor --user "$SYSTEM_USER" \
             --hive-ip $HIVE_IP --madcat-if ens5 --mgmt-if ens4 \
             --yes --password \"$PASS\"
     "
