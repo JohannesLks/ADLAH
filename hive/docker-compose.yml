@@ -22,6 +22,11 @@ services:
     depends_on:
       elasticsearch:
         condition: service_healthy
+    environment:
+      # Provide strong random keys (rotation aware). Values injected by reinstall script.
+      XPACK_ENCRYPTED_SAVED_OBJECTS_KEY: "${XPACK_ENCRYPTED_SAVED_OBJECTS_KEY}"
+      XPACK_SECURITY_ENCRYPTIONKEY: "${XPACK_SECURITY_ENCRYPTIONKEY}"
+      XPACK_REPORTING_ENCRYPTIONKEY: "${XPACK_REPORTING_ENCRYPTIONKEY}"
     restart: unless-stopped
 
   logstash:
@@ -56,12 +61,15 @@ services:
 
   nginx:
     build: ./nginx
-    ports: ["443:443"]
+    ports:
+      - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/dist/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/htpasswd:/etc/nginx/.htpasswd:ro
       - ./nginx/certs/cert.pem:/etc/nginx/certs/cert.pem:ro
       - ./nginx/certs/key.pem:/etc/nginx/certs/key.pem:ro
+      - nginx-logs:/var/log/nginx
     depends_on:
       - kibana
     restart: unless-stopped
@@ -69,3 +77,4 @@ services:
 volumes:
   esdata:
   rl-agent-models:
+  nginx-logs:

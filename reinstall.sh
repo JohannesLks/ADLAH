@@ -11,6 +11,11 @@ SENSOR_IP=10.1.0.5
 SENSOR_USER=lukas
 HIVE_IP=10.1.0.10
 CLUSTER_IP=10.1.0.15
+# Username used for Kibana / nginx basic auth (htpasswd). System user stays 'lukas'.
+# Username for Kibana/nginx basic auth ONLY
+KIBANA_AUTH_USER=adlah
+# System user for SSH/cluster/sensor operations
+SYSTEM_USER=lukas
 
 # =====================================
 # Helper Functions
@@ -43,7 +48,8 @@ install_hive() {
     export SENSOR_USER=$SENSOR_USER
     export HIVE_IP=$HIVE_IP
     rm -rf ~/hive
-    ~/ADLAH/install.sh --type hive --user lukas \
+    # Use dedicated Kibana/nginx basic auth user (not the system user)
+    ~/ADLAH/install.sh --type hive --user "$KIBANA_AUTH_USER" \
         --yes --password "$PASS"
     
     log "Running Certbot setup..."
@@ -54,9 +60,10 @@ install_hive() {
 deploy_cluster() {
     log "Step 2: Deploying Cluster..."
     # The directory is created by deploy.sh, no need to create it here.
-    rm -rf $HOME/hive/cluster_kubeconfig/config_host
+    sudo rm -rf $HOME/hive/cluster_kubeconfig/config_host
+    # Cluster deployment must use system SSH user, not Kibana auth user
     ~/ADLAH/deploy.sh --cluster --ip $CLUSTER_IP \
-        --user lukas --grafana-pass "$PASS"
+        --user "$SYSTEM_USER" --grafana-pass "$PASS"
 }
 
 # Step 3: Setup Sensor
@@ -66,9 +73,9 @@ setup_sensor() {
         cd ~ && rm -rf ~/sensor && 
         cd ~/ADLAH && 
         git fetch --all && 
-        git checkout just-ssh-forward && 
+        git checkout dev && 
         git pull && 
-        ./install.sh --type sensor --user lukas \
+    chmod +x ./install.sh && ./install.sh --type sensor --user "$SYSTEM_USER" \
             --hive-ip $HIVE_IP --madcat-if ens5 --mgmt-if ens4 \
             --yes --password \"$PASS\"
     "
@@ -78,7 +85,7 @@ setup_sensor() {
 deploy_sensor() {
     log "Step 4: Deploying Sensor..."
     ~/ADLAH/deploy.sh --sensor --ip $SENSOR_IP \
-        --user lukas
+        --user "$SYSTEM_USER"  # Sensor deploy uses system SSH user
 }
 # Step 4: Start Sensor Containers
 start_sensor_containers() {
@@ -125,6 +132,21 @@ main() {
     
     check_password
     cleanup
+
+    # Generate fresh Kibana encryption keys (rotation) - 64 random hex chars each
+    export XPACK_ENCRYPTED_SAVED_OBJECTS_KEY=$(openssl rand -hex 32)
+    export XPACK_SECURITY_ENCRYPTIONKEY=$(openssl rand -hex 32)
+    export XPACK_REPORTING_ENCRYPTIONKEY=$(openssl rand -hex 32)
+    log "Generated new Kibana encryption keys (will invalidate prior sessions)."
+    # Persist for docker compose (executed later inside ~/hive)
+    mkdir -p "$HOME/hive" || true
+    cat > "$HOME/hive/.env" <<EOF
+XPACK_ENCRYPTED_SAVED_OBJECTS_KEY=${XPACK_ENCRYPTED_SAVED_OBJECTS_KEY}
+XPACK_SECURITY_ENCRYPTIONKEY=${XPACK_SECURITY_ENCRYPTIONKEY}
+XPACK_REPORTING_ENCRYPTIONKEY=${XPACK_REPORTING_ENCRYPTIONKEY}
+EOF
+    chmod 600 "$HOME/hive/.env"
+    log "Wrote Kibana encryption keys to ~/hive/.env (chmod 600)."
     
     install_hive
     log "Ensuring port 6443 is free..."
