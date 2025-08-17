@@ -3,5 +3,8 @@ server.host: "0.0.0.0"
 elasticsearch.hosts: [ "http://elasticsearch:9200" ]
 monitoring.ui.container.elasticsearch.enabled: true
 xpack.security.enabled: false
-xpack.encryptedSavedObjects.encryptionKey: "__ENCRYPTION_KEY__"
+# Provide encryption keys via environment (docker-compose). Each must be 32+ chars.
+xpack.encryptedSavedObjects.encryptionKey: ${XPACK_ENCRYPTED_SAVED_OBJECTS_KEY}
+xpack.security.encryptionKey: ${XPACK_SECURITY_ENCRYPTIONKEY}
+xpack.reporting.encryptionKey: ${XPACK_REPORTING_ENCRYPTIONKEY}
 interactiveSetup.enabled: false

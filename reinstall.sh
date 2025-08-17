@@ -132,6 +132,21 @@ main() {
     
     check_password
     cleanup
+
+    # Generate fresh Kibana encryption keys (rotation) - 64 random hex chars each
+    export XPACK_ENCRYPTED_SAVED_OBJECTS_KEY=$(openssl rand -hex 32)
+    export XPACK_SECURITY_ENCRYPTIONKEY=$(openssl rand -hex 32)
+    export XPACK_REPORTING_ENCRYPTIONKEY=$(openssl rand -hex 32)
+    log "Generated new Kibana encryption keys (will invalidate prior sessions)."
+    # Persist for docker compose (executed later inside ~/hive)
+    mkdir -p "$HOME/hive" || true
+    cat > "$HOME/hive/.env" <<EOF
+XPACK_ENCRYPTED_SAVED_OBJECTS_KEY=${XPACK_ENCRYPTED_SAVED_OBJECTS_KEY}
+XPACK_SECURITY_ENCRYPTIONKEY=${XPACK_SECURITY_ENCRYPTIONKEY}
+XPACK_REPORTING_ENCRYPTIONKEY=${XPACK_REPORTING_ENCRYPTIONKEY}
+EOF
+    chmod 600 "$HOME/hive/.env"
+    log "Wrote Kibana encryption keys to ~/hive/.env (chmod 600)."
     
     install_hive
     log "Ensuring port 6443 is free..."
