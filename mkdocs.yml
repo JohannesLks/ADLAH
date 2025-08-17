@@ -2,6 +2,7 @@ site_name: ADLAH Docs
 site_url: https://docs.adlah.dev/
 repo_url: https://github.com/JohannesLks/ADLAH
 repo_name: JohannesLks/ADLAH
+site_description: Adaptive Deep Learning Honeynet
 
 theme:
   name: material
@@ -10,8 +11,6 @@ theme:
     - navigation.top
     - toc.integrate
     - content.code.copy
-    - content.code.annotate
-    - content.action.edit
   palette:
     - scheme: default
       primary: red
@@ -25,30 +24,22 @@ theme:
       toggle:
         icon: material/weather-sunny
         name: Light mode
-  logo: images/logo.svg
-  favicon: images/favicon.png
-
-markdown_extensions:
-  - admonition
-  - footnotes
-  - attr_list
-  - def_list
-  - tables
-  - toc:
-      permalink: true
-  - pymdownx.details
-  - pymdownx.superfences
-  - pymdownx.tabbed:
-      alternate_style: true
-  - pymdownx.highlight
-  - pymdownx.inlinehilite
-  - pymdownx.tasklist
-  - pymdownx.emoji:
-      emoji_generator: !!python/name:materialx.emoji.to_svg
+  language: en
 
 plugins:
   - search
   - mermaid2
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - tables
+  - footnotes
 
 nav:
   - Home: index.md
@@ -58,8 +49,3 @@ nav:
   - Security: security.md
   - Troubleshooting: troubleshooting.md
   - FAQ: faq.md
-
-extra:
-  social:
-    - icon: fontawesome/brands/github
-      link: https://github.com/JohannesLks/ADLAH

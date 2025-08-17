@@ -1,52 +1,60 @@
-site_name: ADLAH Docs
-site_url: https://docs.adlah.dev/
-repo_url: https://github.com/JohannesLks/ADLAH
-repo_name: JohannesLks/ADLAH
-site_description: Adaptive Deep Learning Honeynet
+name: docs
 
-theme:
-  name: material
-  features:
-    - navigation.tabs
-    - navigation.top
-    - toc.integrate
-    - content.code.copy
-  palette:
-    - scheme: default
-      primary: red
-      accent: red
-      toggle:
-        icon: material/weather-night
-        name: Dark mode
-    - scheme: slate
-      primary: red
-      accent: red
-      toggle:
-        icon: material/weather-sunny
-        name: Light mode
-  language: en
-  favicon: images/favicon.png
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'mkdocs.yml'
+      - 'docs/**'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
 
-plugins:
-  - search
-  - mermaid2
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
-markdown_extensions:
-  - admonition
-  - toc:
-      permalink: true
-  - pymdownx.details
-  - pymdownx.superfences
-  - pymdownx.highlight
-  - pymdownx.inlinehilite
-  - tables
-  - footnotes
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
 
-nav:
-  - Home: index.md
-  - Install: install.md
-  - Usage: usage.md
-  - Architecture: architecture.md
-  - Security: security.md
-  - Troubleshooting: troubleshooting.md
-  - FAQ: faq.md
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install MkDocs + plugins
+        run: |
+          python -m pip install --upgrade pip
+          pip install mkdocs-material
+          pip install mkdocs-mermaid2-plugin   # falls 'mermaid2' in mkdocs.yml aktiv ist
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Build site
+        run: mkdocs build --strict
+
+      - name: Add CNAME
+        run: echo "docs.adlah.dev" > site/CNAME
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
