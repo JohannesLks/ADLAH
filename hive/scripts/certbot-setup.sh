@@ -41,6 +41,7 @@ copy_certificates() {
     local cert_path="$(pwd)/hive/nginx/certs/cert.pem"
     local key_path="$(pwd)/hive/nginx/certs/key.pem"
 
+    sudo mkdir -p "$(pwd)/hive/nginx/certs/"
     sudo cp "/etc/letsencrypt/live/adlah.dev/fullchain.pem" "$cert_path"
     if [ $? -ne 0 ]; then
         error "Failed to copy certificate."
@@ -58,7 +59,16 @@ copy_certificates() {
 }
 
 start_temp_nginx() {
-    log "Starting temporary Nginx container..."
+    # If a production nginx already listens on :80, reuse it (assumes webroot mapping already accessible)
+    if docker ps --format '{{.Names}}' | grep -qx 'hive-nginx-1'; then
+        log "Detected running hive-nginx-1 on port 80 – skipping temp container. Ensure webroot served."
+        return 0
+    fi
+    log "Starting temporary Nginx container (no existing listener on :80)..."
+    if docker ps -a --format '{{.Names}}' | grep -qx 'temp-nginx'; then
+        log "Removing existing temp-nginx container..."
+        docker rm -f temp-nginx >/dev/null 2>&1 || true
+    fi
     docker run -d --name temp-nginx -p 80:80 \
         -v "$HIVE_CERTBOT_CONF:/etc/nginx/conf.d/default.conf" \
         -v "$HIVE_CERTBOT_WEBROOT:/var/www/certbot" \
@@ -66,9 +76,13 @@ start_temp_nginx() {
 }
 
 stop_temp_nginx() {
-    log "Stopping temporary Nginx container..."
-    docker stop temp-nginx
-    docker rm temp-nginx
+    if docker ps --format '{{.Names}}' | grep -qx 'temp-nginx'; then
+        log "Stopping temporary Nginx container..."
+        docker stop temp-nginx || true
+        docker rm temp-nginx || true
+    else
+        log "No temp-nginx container to stop (production nginx reused)."
+    fi
 }
 
 restart_nginx_manually() {
