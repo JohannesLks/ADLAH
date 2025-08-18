@@ -41,15 +41,15 @@ jobs:
       fail-fast: false
       matrix:
         image:
-          - { name: nginx,                 dockerfile: 'nginx/Dockerfile',                     context: 'nginx' }
-          - { name: hive-elasticsearch,    dockerfile: 'hive/elasticsearch/dist/Dockerfile',  context: 'hive/elasticsearch/dist' }
-          - { name: hive-kibana,           dockerfile: 'hive/kibana/dist/Dockerfile',         context: 'hive/kibana/dist' }
-          - { name: hive-logstash,         dockerfile: 'hive/logstash/dist/Dockerfile',       context: 'hive/logstash/dist' }
-          - { name: filebeat,              dockerfile: 'sensor/filebeat/dist/Dockerfile',     context: 'sensor/filebeat/dist' }
-          - { name: madcat,                dockerfile: 'sensor/madcat/dist/Dockerfile',       context: 'sensor/madcat/dist' }
-          - { name: rl-agent,              dockerfile: 'rl-agent/Dockerfile',                  context: 'rl-agent' }
-          - { name: rl-agent-filebeat,     dockerfile: 'rl-agent-filebeat/Dockerfile',         context: 'rl-agent-filebeat' }
-          - { name: redirector-agent,      dockerfile: 'redirector-agent/Dockerfile',          context: 'redirector-agent' }
+          - { name: nginx,                 dockerfile: 'hive/nginx/Dockerfile',                     context: 'hive/nginx' }
+          - { name: hive-elasticsearch,    dockerfile: 'hive/elasticsearch/Dockerfile',  context: 'hive/elasticsearch' }
+          - { name: hive-kibana,           dockerfile: 'hive/kibana/Dockerfile',         context: 'hive/kibana' }
+          - { name: hive-logstash,         dockerfile: 'hive/logstash/Dockerfile',       context: 'hive/logstash' }
+          - { name: filebeat,              dockerfile: 'sensor/filebeat/Dockerfile',     context: 'sensor/filebeat' }
+          - { name: madcat,                dockerfile: 'sensor/madcat/Dockerfile',       context: 'sensor/madcat' }
+          - { name: rl-agent,              dockerfile: 'hive/rl-agent/Dockerfile',                  context: 'hive/rl-agent' }
+          - { name: rl-agent-filebeat,     dockerfile: 'hive/rl-agent-filebeat/Dockerfile',         context: 'hive/rl-agent-filebeat' }
+          - { name: redirector-agent,      dockerfile: 'hive/redirector-agent/Dockerfile',          context: 'hive/redirector-agent' }
           # Falls gewünscht:
           # - { name: rl-agent-sim,       dockerfile: 'rl-agent/Dockerfile.sim',              context: 'rl-agent' }
           # - { name: k8s-orchestrator,   dockerfile: 'orchestrator/Dockerfile',              context: 'orchestrator' }
