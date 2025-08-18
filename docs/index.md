@@ -24,12 +24,13 @@ Clone the repository and install the hive (central ELK stack):
 ```bash
 git clone https://github.com/JohannesLks/ADLAH.git
 cd ADLAH
-````
+```
+
 >Adjust vars in `reinstall.sh` 
 
 ```bash
 ./reinstall.sh
-````
+```
 
 ## Documentation
 
