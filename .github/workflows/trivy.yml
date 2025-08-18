@@ -1,48 +1,104 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
 name: trivy
 
 on:
   push:
-    branches: [ "main", "dev" ]
+    branches: [ main, dev ]
   pull_request:
-    # The branches below must be a subset of the branches above
-    branches: [ "main" ]
+    branches: [ main ]
   schedule:
     - cron: '17 23 * * 1'
+  workflow_dispatch:
 
 permissions:
   contents: read
+  security-events: write
+  actions: read
 
 jobs:
-  build:
-    permissions:
-      contents: read # for actions/checkout to fetch code
-      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
-      actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
-    name: Build
+  trivy-fs:
     runs-on: ubuntu-latest
+    environment:
+      name: security-scan
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Build an image from Dockerfile
-        run: |
-          docker build -t docker.io/my-organization/my-app:${{ github.sha }} .
+      - name: Cache Trivy DB
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: ${{ runner.os }}-trivy-db-v1
+          restore-keys: |
+            ${{ runner.os }}-trivy-db-
 
-      - name: Run Trivy vulnerability scanner
+      - name: Trivy filesystem scan (repo)
         uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
         with:
-          image-ref: 'docker.io/my-organization/my-app:${{ github.sha }}'
-          format: 'template'
-          template: '@/contrib/sarif.tpl'
-          output: 'trivy-results.sarif'
+          scan-type: 'fs'
+          format: 'sarif'
+          output: 'trivy-fs.sarif'
           severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          security-checks: 'vuln,secret,config'
+          timeout: '10m'
 
-      - name: Upload Trivy scan results to GitHub Security tab
+      - name: Upload SARIF (FS)
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: 'trivy-results.sarif'
+          sarif_file: trivy-fs.sarif
+
+  trivy-images:
+    runs-on: ubuntu-latest
+    environment:
+      name: security-scan
+
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        image:
+          - { name: nginx,                 dockerfile: 'hive/nginx/Dockerfile',               context: 'hive/nginx' }
+          - { name: hive-elasticsearch,    dockerfile: 'hive/elasticsearch/Dockerfile',       context: 'hive/elasticsearch' }
+          - { name: hive-kibana,           dockerfile: 'hive/kibana/Dockerfile',              context: 'hive/kibana' }
+          - { name: hive-logstash,         dockerfile: 'hive/logstash/Dockerfile',            context: 'hive/logstash' }
+          - { name: filebeat,              dockerfile: 'sensor/filebeat/Dockerfile',          context: 'sensor/filebeat' }
+          - { name: madcat,                dockerfile: 'sensor/madcat/Dockerfile',            context: 'sensor/madcat' }
+          - { name: rl-agent,              dockerfile: 'hive/rl-agent/Dockerfile',            context: 'hive/rl-agent' }
+          - { name: rl-agent-filebeat,     dockerfile: 'hive/rl-agent-filebeat/Dockerfile',   context: 'hive/rl-agent-filebeat' }
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build ${{ matrix.image.name }}
+        run: |
+          docker build \
+            -t local/${{ matrix.image.name }}:${{ github.sha }} \
+            -f ${{ matrix.image.dockerfile }} \
+            ${{ matrix.image.context }}
+
+      - name: Cache Trivy DB
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: ${{ runner.os }}-trivy-db-v1
+          restore-keys: |
+            ${{ runner.os }}-trivy-db-
+
+      - name: Trivy scan ${{ matrix.image.name }}
+        uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
+        with:
+          image-ref: local/${{ matrix.image.name }}:${{ github.sha }}
+          format: 'sarif'
+          output: trivy-${{ matrix.image.name }}.sarif
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          security-checks: 'vuln'
+          timeout: '30m'
+
+      - name: Upload SARIF (${{ matrix.image.name }})
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-${{ matrix.image.name }}.sarif
