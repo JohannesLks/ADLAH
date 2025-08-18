@@ -20,7 +20,7 @@ We will acknowledge receipt within **5 business days** and provide a timeline fo
 ## Responsible Disclosure
 
 * Please give us **at least 90 days** to address the vulnerability before public disclosure.
-* We follow **coordinated disclosure practices** in line with [ISO/IEC 29147](https://www.iso.org/standard/45170.html).
+* We follow **coordinated disclosure practices** in line with [ISO/IEC 29147](https://www.iso.org/standard/72311.html).
 * Critical issues may result in a **CVE assignment**.
 
 ---
@@ -37,3 +37,4 @@ This policy does **not** cover:
 
 * Third-party dependencies (e.g., Elastic, MADCAT) — please report those upstream.
 * Experimental branches or forks.
+
