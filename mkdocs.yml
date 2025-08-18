@@ -33,6 +33,7 @@ plugins:
 extra:
   version:
     provider: mike
+    default: stable
 
 markdown_extensions:
   - admonition
