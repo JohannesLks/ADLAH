@@ -50,7 +50,6 @@ jobs:
           - { name: madcat,                dockerfile: 'sensor/madcat/Dockerfile',            context: 'sensor/madcat' }
           - { name: rl-agent,              dockerfile: 'hive/rl-agent/Dockerfile',            context: 'hive/rl-agent' }
           - { name: rl-agent-filebeat,     dockerfile: 'hive/rl-agent-filebeat/Dockerfile',   context: 'hive/rl-agent-filebeat' }
-          - { name: k8s-orchestrator,      dockerfile: 'hive/orchestrator/Dockerfile',        context: 'hive/orchestrator' }
     steps:
       - uses: actions/checkout@v4
 
