@@ -75,6 +75,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#security-policy" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -538,6 +543,21 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Security
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
         
@@ -550,6 +570,52 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#reporting-a-vulnerability" class="md-nav__link">
+    <span class="md-ellipsis">
+      Reporting a Vulnerability
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#responsible-disclosure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Responsible Disclosure
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      Scope
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -618,9 +684,40 @@
   
 
 
-  <h1>Security</h1>
-
-
+<h1 id="security-policy">Security Policy<a class="headerlink" href="#security-policy" title="Permanent link">&para;</a></h1>
+<h2 id="reporting-a-vulnerability">Reporting a Vulnerability<a class="headerlink" href="#reporting-a-vulnerability" title="Permanent link">&para;</a></h2>
+<p>If you discover a security vulnerability in <strong>ADLAH</strong>, please help us by reporting it responsibly:</p>
+<ul>
+<li><strong>Do not open a public GitHub issue.</strong>
+📧 <strong><a href="mailto:security@adlah.dev">security@adlah.dev</a></strong></li>
+</ul>
+<p>Include as much detail as possible:</p>
+<ul>
+<li>Steps to reproduce the issue</li>
+<li>Potential impact</li>
+<li>Suggested fix (if available)</li>
+</ul>
+<p>We will acknowledge receipt within <strong>5 business days</strong> and provide a timeline for remediation.</p>
+<hr />
+<h2 id="responsible-disclosure">Responsible Disclosure<a class="headerlink" href="#responsible-disclosure" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Please give us <strong>at least 90 days</strong> to address the vulnerability before public disclosure.</li>
+<li>We follow <strong>coordinated disclosure practices</strong> in line with <a href="https://www.iso.org/standard/72311.html">ISO/IEC 29147</a>.</li>
+<li>Critical issues may result in a <strong>CVE assignment</strong>.</li>
+</ul>
+<hr />
+<h2 id="scope">Scope<a class="headerlink" href="#scope" title="Permanent link">&para;</a></h2>
+<p>This policy covers:</p>
+<ul>
+<li>ADLAH source code</li>
+<li>Default Hive and Sensor configurations</li>
+<li>Documentation examples</li>
+</ul>
+<p>This policy does <strong>not</strong> cover:</p>
+<ul>
+<li>Third-party dependencies (e.g., Elastic, MADCAT) — please report those upstream.</li>
+<li>Experimental branches or forks.</li>
+</ul>
 
 
 
