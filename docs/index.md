@@ -35,6 +35,7 @@ cd ADLAH
 
 ## Documentation
 
+* [Prerequisites](prerequisites.md) — prerequisites to get started with ADLAH
 * [Installation](install.md) — step-by-step setup for Hive, Sensor, Cluster
 * [Usage](usage.md) — working with ADLAH, restart & rotation workflows
 * [Architecture](architecture.md) — system design and data flow diagrams
