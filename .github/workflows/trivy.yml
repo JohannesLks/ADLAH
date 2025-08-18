@@ -70,3 +70,6 @@ jobs:
           output: trivy-${{ matrix.image.name }}.sarif
           severity: 'CRITICAL,HIGH'
           ignore-unfixed: true
+          vuln-type: 'os,library'
+          scanners: 'vuln'
+          timeout: '10m'
