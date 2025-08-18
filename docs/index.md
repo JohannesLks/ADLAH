@@ -3,6 +3,7 @@
 Welcome to the documentation for **ADLAH**, an adaptive honeynet framework designed for **real-time anomaly detection and dynamic threat behavior analysis**.
 
 ADLAH combines:
+
 - **First-flight data capture** (MADCAT sensor)
 - **Unsupervised deep learning models** (autoencoder, LSTM, heuristic scoring)
 - **Reinforcement learning orchestration** (adaptive pod spawning)
