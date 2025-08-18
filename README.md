@@ -1,7 +1,7 @@
 # ADLAH
 Adaptive Deep Learning Anomaly Detection Honeynet (ADLAH) 
 
-## Read the [Docs](docs.adlah.dev)
+## Read the [Docs](https://docs.adlah.dev)
 
 ## TL;DR
 1. customize `reinstall.sh`
