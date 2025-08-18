@@ -1,47 +1,43 @@
-name: docs
+name: docs-versioned
 
 on:
   push:
-    branches: [ main, dev, docs ]
+    branches: [ main, dev ]
     paths:
       - 'mkdocs.yml'
       - 'docs/**'
-      - '.github/workflows/docs.yml'
-  pull_request:
-    branches: [ main, dev, docs ]
-    paths:
-      - 'mkdocs.yml'
-      - 'docs/**'
-      - '.github/workflows/docs.yml'
+      - '.github/workflows/docs-versioned.yml'
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install mkdocs mkdocs-material mkdocs-mermaid2-plugin
-      - run: mkdocs build --strict
-      - uses: actions/configure-pages@v5    # optional, aber nice
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
-
-  deploy:
-    if: github.ref == 'refs/heads/main'   # nur main deployt
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - run: |
+          pip install mkdocs mkdocs-material mkdocs-mermaid2-plugin mike
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Deploy docs with mike
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          if [ "$VERSION" = "main" ]; then
+            # baue und veröffentliche Version "stable" (Alias: stable, latest)
+            mike deploy --push --branch gh-pages stable latest --update-aliases
+            # "stable" als Default auf die Root setzen
+            mike set-default --push stable
+          elif [ "$VERSION" = "dev" ]; then
+            # baue und veröffentliche Version "dev"
+            mike deploy --push --branch gh-pages dev --update-aliases
+          else
+            echo "Branch $VERSION wird nicht deployed."
+          fi
