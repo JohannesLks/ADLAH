@@ -5,7 +5,10 @@
 If you discover a security vulnerability in **ADLAH**, please help us by reporting it responsibly:
 
 * **Do not open a public GitHub issue.**
+
 📧 **[security@adlah.dev](mailto:security@adlah.dev)**
+
+OpenPGP Key: `A16680FE844801FB93802D47AAAD2650E8D29783`
 
 Include as much detail as possible:
 
@@ -37,4 +40,5 @@ This policy does **not** cover:
 
 * Third-party dependencies (e.g., Elastic, MADCAT) — please report those upstream.
 * Experimental branches or forks.
+
 
