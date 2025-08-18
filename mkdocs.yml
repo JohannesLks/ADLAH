@@ -1,0 +1,57 @@
+site_name: ADLAH Docs
+site_url: https://docs.adlah.dev/
+repo_url: https://github.com/JohannesLks/ADLAH
+repo_name: JohannesLks/ADLAH
+site_description: Adaptive Deep Learning Honeynet
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.top
+    - toc.integrate
+    - content.code.copy
+  palette:
+    - scheme: default
+      primary: red
+      accent: red
+      toggle:
+        icon: material/weather-night
+        name: Dark mode
+    - scheme: slate
+      primary: red
+      accent: red
+      toggle:
+        icon: material/weather-sunny
+        name: Light mode
+  language: en
+
+plugins:
+  - search
+  - mermaid2
+
+extra:
+  version:
+    provider: mike
+    default: stable
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - tables
+  - footnotes
+
+nav:
+  - Home: index.md
+  - Prerequisites: prerequisites.md
+  - Install: install.md
+  - Usage: usage.md
+  - Architecture: architecture.md
+  - Security: security.md
+  - Troubleshooting: troubleshooting.md
+  - FAQ: faq.md

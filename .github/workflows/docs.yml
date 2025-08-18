@@ -1,0 +1,43 @@
+name: docs-versioned
+
+on:
+  push:
+    branches: [ main, dev ]
+    paths:
+      - 'mkdocs.yml'
+      - 'docs/**'
+      - '.github/workflows/docs-versioned.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: |
+          pip install mkdocs mkdocs-material mkdocs-mermaid2-plugin mike
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Deploy docs with mike
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          if [ "$VERSION" = "main" ]; then
+            # baue und veröffentliche Version "stable" (Alias: stable, latest)
+            mike deploy --push --branch gh-pages stable latest --update-aliases
+            # "stable" als Default auf die Root setzen
+            mike set-default --push stable
+          elif [ "$VERSION" = "dev" ]; then
+            # baue und veröffentliche Version "dev"
+            mike deploy --push --branch gh-pages dev --update-aliases
+          else
+            echo "Branch $VERSION wird nicht deployed."
+          fi
