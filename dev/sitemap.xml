@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://docs.adlah.dev/dev/</loc>
+         <lastmod>2025-08-18</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.adlah.dev/dev/architecture/</loc>
+         <lastmod>2025-08-18</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.adlah.dev/dev/faq/</loc>
+         <lastmod>2025-08-18</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.adlah.dev/dev/install/</loc>
+         <lastmod>2025-08-18</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.adlah.dev/dev/security/</loc>
+         <lastmod>2025-08-18</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.adlah.dev/dev/troubleshooting/</loc>
+         <lastmod>2025-08-18</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.adlah.dev/dev/usage/</loc>
+         <lastmod>2025-08-18</lastmod>
+    </url>
+</urlset>
