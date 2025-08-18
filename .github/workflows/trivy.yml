@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ main ]
   schedule:
-    - cron: '17 23 * * 1'  # weekly
+    - cron: '17 23 * * 1'
   workflow_dispatch:
 
 permissions:
@@ -15,14 +15,13 @@ permissions:
   actions: read
 
 jobs:
-  # ---------- FS scan (immer) ----------
   trivy-fs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: Trivy filesystem scan (repo)
-        uses: aquasecurity/trivy-action@v0
+        uses: aquasecurity/trivy-action@v0.20.0
         with:
           scan-type: 'fs'
           format: 'sarif'
@@ -36,14 +35,12 @@ jobs:
         with:
           sarif_file: trivy-fs.sarif
 
-  # ---------- Image scan (Matrix über deine Dockerfiles) ----------
   trivy-images:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         image:
-          # Jede Zeile: name, dockerfile, context
           - { name: nginx,                 dockerfile: 'nginx/Dockerfile',                     context: 'nginx' }
           - { name: hive-elasticsearch,    dockerfile: 'hive/elasticsearch/dist/Dockerfile',  context: 'hive/elasticsearch/dist' }
           - { name: hive-kibana,           dockerfile: 'hive/kibana/dist/Dockerfile',         context: 'hive/kibana/dist' }
@@ -59,7 +56,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Optional: Buildx für modernere Builds
       - uses: docker/setup-buildx-action@v3
 
       - name: Build ${{ matrix.image.name }}
@@ -70,7 +66,7 @@ jobs:
             ${{ matrix.image.context }}
 
       - name: Trivy scan ${{ matrix.image.name }}
-        uses: aquasecurity/trivy-action@v0
+        uses: aquasecurity/trivy-action@v0.20.0
         with:
           image-ref: local/${{ matrix.image.name }}:${{ github.sha }}
           format: 'sarif'
