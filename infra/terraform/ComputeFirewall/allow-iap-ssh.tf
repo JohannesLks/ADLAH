@@ -1,15 +1,11 @@
 resource "google_compute_firewall" "allow_iap_ssh" {
-  allow {
-    ports    = ["22"]
-    protocol = "tcp"
-  }
-
+  allow { protocol = "tcp" ports = ["22"] }
   direction     = "INGRESS"
-  name          = "allow-iap-ssh"
-  network       = "https://www.googleapis.com/compute/v1/projects/adlah3/global/networks/core-vpc"
+  name          = "allow-iap-ssh-${var.env}"
+  network       = google_compute_network.core_vpc.self_link
   priority      = 1000
-  project       = "adlah3"
-  source_ranges = ["35.235.240.0/20"]
-  target_tags   = ["iap-enabled"]
+  project       = var.project_id
+  source_ranges = [var.iap_source_range]
+  target_tags   = ["iap-enabled", var.env]
 }
-# terraform import google_compute_firewall.allow_iap_ssh projects/adlah3/global/firewalls/allow-iap-ssh
+# terraform import google_compute_firewall.allow_iap_ssh projects/${var.project_id}/global/firewalls/allow-iap-ssh

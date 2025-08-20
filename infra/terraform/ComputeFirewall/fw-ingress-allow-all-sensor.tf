@@ -1,14 +1,11 @@
 resource "google_compute_firewall" "fw_ingress_allow_all_sensor" {
-  allow {
-    protocol = "all"
-  }
-
+  allow { protocol = "all" }
   direction     = "INGRESS"
-  name          = "fw-ingress-allow-all-sensor"
-  network       = "https://www.googleapis.com/compute/v1/projects/adlah3/global/networks/honeynet-vpc"
+  name          = "allow-all-sensor-${var.env}"
+  network       = google_compute_network.honeynet_vpc.self_link
   priority      = 1000
-  project       = "adlah3"
-  source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["sensor"]
+  project       = var.project_id
+  source_ranges = [var.internet_cidr]
+  target_tags   = ["sensor", var.env]
 }
-# terraform import google_compute_firewall.fw_ingress_allow_all_sensor projects/adlah3/global/firewalls/fw-ingress-allow-all-sensor
+# terraform import google_compute_firewall.fw_ingress_allow_all_sensor projects/${var.project_id}/global/firewalls/allow-all-sensor-${var.env}

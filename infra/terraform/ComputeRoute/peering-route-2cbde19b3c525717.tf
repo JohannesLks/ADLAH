@@ -1,9 +1,9 @@
-resource "google_compute_route" "peering_route_2cbde19b3c525717" {
-  description = "Auto generated route via peering [dmzandcore]."
-  dest_range  = "10.10.1.0/24"
-  name        = "peering-route-2cbde19b3c525717"
-  network     = "https://www.googleapis.com/compute/v1/projects/adlah3/global/networks/honeynet-vpc"
+resource "google_compute_route" "dmz_to_core_cidr1" {
+  description = "Route dmz -> core subnet1"
+  dest_range  = var.core_subnet_cidr
+  name        = "dmz-to-core1-${var.env}"
+  network     = google_compute_network.honeynet_vpc.self_link
   priority    = 0
-  project     = "adlah3"
+  project     = var.project_id
 }
-# terraform import google_compute_route.peering_route_2cbde19b3c525717 projects/adlah3/global/routes/peering-route-2cbde19b3c525717
+# terraform import google_compute_route.dmz_to_core_cidr1 projects/${var.project_id}/global/routes/dmz-to-core1-${var.env}

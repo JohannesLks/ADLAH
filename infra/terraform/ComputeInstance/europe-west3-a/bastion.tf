@@ -1,71 +1,58 @@
 resource "google_compute_instance" "bastion" {
+  name         = "bastion-${var.env}"
+  project      = var.project_id
+  zone         = var.zone
+  machine_type = var.bastion_machine_type
+
   boot_disk {
     auto_delete = true
     device_name = "bastion"
-
     initialize_params {
-      image = "https://www.googleapis.com/compute/beta/projects/ubuntu-os-cloud/global/images/ubuntu-minimal-2204-jammy-v20250723"
-      size  = 40
+      image = data.google_compute_image.ubuntu_base.self_link
+      size  = var.bastion_disk_size_gb
       type  = "pd-balanced"
     }
-
-    mode   = "READ_WRITE"
-    source = "https://www.googleapis.com/compute/v1/projects/adlah3/zones/europe-west3-a/disks/bastion"
+    mode = "READ_WRITE"
   }
 
-  confidential_instance_config {
-    enable_confidential_compute = false
-  }
+  confidential_instance_config { enable_confidential_compute = false }
 
-  labels = {
-    goog-ops-agent-policy = "v2-x86-template-1-4-0"
-    managed-by-cnrm       = "true"
-  }
+  labels = { env = var.env }
 
-  machine_type = "e2-medium"
-
-  metadata = {
-    enable-osconfig = "TRUE"
-  }
-
-  name = "bastion"
+  metadata = { enable-osconfig = "TRUE" }
 
   network_interface {
     access_config {
-      nat_ip       = "34.40.96.43"
+      nat_ip       = coalesce(try(google_compute_address.bastion_fixed[0].address, null), google_compute_address.bastion.address)
       network_tier = "PREMIUM"
     }
-
-    network            = "https://www.googleapis.com/compute/v1/projects/adlah3/global/networks/honeynet-vpc"
-    network_ip         = "10.0.0.21"
-    stack_type         = "IPV4_ONLY"
-    subnetwork         = "https://www.googleapis.com/compute/v1/projects/adlah3/regions/europe-west3/subnetworks/dmz-subnet"
-    subnetwork_project = "adlah3"
+    network    = google_compute_network.honeynet_vpc.self_link
+    subnetwork = google_compute_subnetwork.dmz_subnet.self_link
+    stack_type = "IPV4_ONLY"
+    dynamic "network_ip" {
+      for_each = var.bastion_internal_ip == "" ? [] : [var.bastion_internal_ip]
+      content { # dummy block, we cannot set network_ip this way; fallback below }
+    }
+    # direct attribute for internal IP if provided
+    network_ip = var.bastion_internal_ip == "" ? null : var.bastion_internal_ip
   }
 
-  project = "adlah3"
-
-  reservation_affinity {
-    type = "ANY_RESERVATION"
-  }
-
-  scheduling {
-    automatic_restart   = true
-    on_host_maintenance = "MIGRATE"
-    provisioning_model  = "STANDARD"
-  }
+  scheduling { automatic_restart = true on_host_maintenance = "MIGRATE" provisioning_model = "STANDARD" }
 
   service_account {
-    email  = "630035832230-compute@developer.gserviceaccount.com"
-    scopes = ["https://www.googleapis.com/auth/devstorage.read_only", "https://www.googleapis.com/auth/logging.write", "https://www.googleapis.com/auth/monitoring.write", "https://www.googleapis.com/auth/service.management.readonly", "https://www.googleapis.com/auth/servicecontrol", "https://www.googleapis.com/auth/trace.append"]
+    email  = local.compute_service_account_email
+    scopes = [
+      "https://www.googleapis.com/auth/devstorage.read_only",
+      "https://www.googleapis.com/auth/logging.write",
+      "https://www.googleapis.com/auth/monitoring.write",
+      "https://www.googleapis.com/auth/service.management.readonly",
+      "https://www.googleapis.com/auth/servicecontrol",
+      "https://www.googleapis.com/auth/trace.append"
+    ]
   }
 
-  shielded_instance_config {
-    enable_integrity_monitoring = true
-    enable_vtpm                 = true
-  }
+  shielded_instance_config { enable_integrity_monitoring = true enable_vtpm = true }
 
-  tags = ["bastion"]
-  zone = "europe-west3-a"
+  tags = ["bastion", var.env]
 }
-# terraform import google_compute_instance.bastion projects/adlah3/zones/europe-west3-a/instances/bastion
+# terraform import google_compute_instance.bastion projects/${var.project_id}/zones/${var.zone}/instances/bastion

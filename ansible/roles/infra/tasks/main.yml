@@ -1,0 +1,86 @@
+---
+# Provision or update GCP infrastructure via Terraform
+
+- name: Ensure terraform is installed (hashicorp) if missing
+  ansible.builtin.shell: |
+    if ! command -v terraform >/dev/null 2>&1; then
+      curl -fsSL https://releases.hashicorp.com/terraform/1.9.2/terraform_1.9.2_linux_amd64.zip -o /tmp/terraform.zip && \
+      unzip -qo /tmp/terraform.zip -d /usr/local/bin
+    fi
+  args:
+    creates: /usr/local/bin/terraform
+  become: true
+  when: provision_infrastructure | bool
+
+- name: Create terraform working dir on controller
+  ansible.builtin.file:
+    path: "{{ playbook_dir }}/.terraform-work"
+    state: directory
+    mode: '0755'
+  run_once: true
+  delegate_to: localhost
+  when: provision_infrastructure | bool
+
+- name: Write tfvars file from inventory vars
+  ansible.builtin.copy:
+    dest: "{{ playbook_dir }}/.terraform-work/{{ terraform_env }}.tfvars"
+    mode: '0600'
+    content: |
+      project_id = "{{ terraform_project_id }}"
+      region     = "{{ terraform_region }}"
+      zone       = "{{ terraform_zone }}"
+      env        = "{{ terraform_env }}"
+      bastion_static_ip = {{ terraform_bastion_static_ip | to_json }}
+      hive_static_ip    = {{ terraform_hive_static_ip | to_json }}
+  run_once: true
+  delegate_to: localhost
+  when: provision_infrastructure | bool
+
+- name: Run terraform init
+  ansible.builtin.shell: terraform init -input=false
+  args:
+    chdir: "{{ playbook_dir }}/../infra/terraform"
+  run_once: true
+  delegate_to: localhost
+  when: provision_infrastructure | bool
+
+- name: Run terraform apply
+  ansible.builtin.shell: terraform apply -auto-approve -input=false -var-file="{{ playbook_dir }}/.terraform-work/{{ terraform_env }}.tfvars"
+  args:
+    chdir: "{{ playbook_dir }}/../infra/terraform"
+  run_once: true
+  delegate_to: localhost
+  when: provision_infrastructure | bool
+
+- name: Capture terraform outputs (json)
+  ansible.builtin.command: terraform output -json
+  args:
+    chdir: "{{ playbook_dir }}/../infra/terraform"
+  register: tf_outputs
+  run_once: true
+  delegate_to: localhost
+  changed_when: false
+  when: provision_infrastructure | bool
+
+- name: Generate dynamic inventory json
+  ansible.builtin.command: >-
+    python3 scripts/generate_inventory.py
+  args:
+    chdir: "{{ playbook_dir }}/../infra/terraform"
+  register: gen_inv
+  run_once: true
+  delegate_to: localhost
+  changed_when: false
+  when: provision_infrastructure | bool
+
+- name: Write generated inventory json to file
+  ansible.builtin.copy:
+    dest: "{{ playbook_dir }}/generated-inventory-{{ terraform_env }}.json"
+    mode: '0644'
+    content: "{{ gen_inv.stdout }}"
+  run_once: true
+  delegate_to: localhost
+  when: provision_infrastructure | bool
+
+# Optionally we could add a task to update hosts in-memory for subsequent plays
+# This requires community.general.add_host or set_fact parsing the json.

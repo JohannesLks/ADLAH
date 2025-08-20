@@ -1,15 +1,11 @@
 resource "google_compute_firewall" "fw_ingress_sensor_to_cluster_attacker" {
-  allow {
-    ports    = ["2222"]
-    protocol = "tcp"
-  }
-
+  allow { protocol = "tcp" ports = ["2222"] }
   direction     = "INGRESS"
-  name          = "fw-ingress-sensor-to-cluster-attacker"
-  network       = "https://www.googleapis.com/compute/v1/projects/adlah3/global/networks/core-vpc"
+  name          = "sensor-to-cluster-attacker-${var.env}"
+  network       = google_compute_network.core_vpc.self_link
   priority      = 1000
-  project       = "adlah3"
-  source_ranges = ["10.1.0.5"]
-  target_tags   = ["cluster"]
+  project       = var.project_id
+  source_ranges = [var.sensor_core_ip]
+  target_tags   = ["cluster", var.env]
 }
-# terraform import google_compute_firewall.fw_ingress_sensor_to_cluster_attacker projects/adlah3/global/firewalls/fw-ingress-sensor-to-cluster-attacker
+# terraform import google_compute_firewall.fw_ingress_sensor_to_cluster_attacker projects/${var.project_id}/global/firewalls/sensor-to-cluster-attacker-${var.env}

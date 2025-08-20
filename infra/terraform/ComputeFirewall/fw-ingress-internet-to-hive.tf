@@ -1,15 +1,11 @@
 resource "google_compute_firewall" "fw_ingress_internet_to_hive" {
-  allow {
-    ports    = ["80", "443"]
-    protocol = "tcp"
-  }
-
+  allow { protocol = "tcp" ports = ["80", "443"] }
   direction     = "INGRESS"
-  name          = "fw-ingress-internet-to-hive"
-  network       = "https://www.googleapis.com/compute/v1/projects/adlah3/global/networks/core-vpc"
+  name          = "internet-to-hive-${var.env}"
+  network       = google_compute_network.core_vpc.self_link
   priority      = 100
-  project       = "adlah3"
-  source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["hive"]
+  project       = var.project_id
+  source_ranges = [var.internet_cidr]
+  target_tags   = ["hive", var.env]
 }
-# terraform import google_compute_firewall.fw_ingress_internet_to_hive projects/adlah3/global/firewalls/fw-ingress-internet-to-hive
+# terraform import google_compute_firewall.fw_ingress_internet_to_hive projects/${var.project_id}/global/firewalls/internet-to-hive-${var.env}

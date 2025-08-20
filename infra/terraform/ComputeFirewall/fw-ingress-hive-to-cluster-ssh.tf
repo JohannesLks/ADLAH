@@ -1,15 +1,11 @@
 resource "google_compute_firewall" "fw_ingress_hive_to_cluster_ssh" {
-  allow {
-    ports    = ["22"]
-    protocol = "tcp"
-  }
-
+  allow { protocol = "tcp" ports = ["22"] }
   direction     = "INGRESS"
-  name          = "fw-ingress-hive-to-cluster-ssh"
-  network       = "https://www.googleapis.com/compute/v1/projects/adlah3/global/networks/core-vpc"
+  name          = "hive-to-cluster-ssh-${var.env}"
+  network       = google_compute_network.core_vpc.self_link
   priority      = 1000
-  project       = "adlah3"
-  source_ranges = ["10.1.0.10"]
-  target_tags   = ["cluster"]
+  project       = var.project_id
+  source_ranges = [var.hive_internal_ip]
+  target_tags   = ["cluster", var.env]
 }
-# terraform import google_compute_firewall.fw_ingress_hive_to_cluster_ssh projects/adlah3/global/firewalls/fw-ingress-hive-to-cluster-ssh
+# terraform import google_compute_firewall.fw_ingress_hive_to_cluster_ssh projects/${var.project_id}/global/firewalls/hive-to-cluster-ssh-${var.env}

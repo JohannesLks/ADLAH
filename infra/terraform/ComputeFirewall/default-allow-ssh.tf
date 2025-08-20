@@ -1,14 +1,10 @@
 resource "google_compute_firewall" "default_allow_ssh" {
-  allow {
-    ports    = ["22"]
-    protocol = "tcp"
-  }
-
+  allow { protocol = "tcp" ports = ["22"] }
   direction     = "INGRESS"
-  name          = "default-allow-ssh"
-  network       = "https://www.googleapis.com/compute/v1/projects/adlah3/global/networks/default"
+  name          = "default-allow-ssh-${var.env}"
+  network       = "default" # leaving default network ref static; consider removal if unused
   priority      = 65534
-  project       = "adlah3"
-  source_ranges = ["0.0.0.0/0"]
+  project       = var.project_id
+  source_ranges = [var.internet_cidr]
 }
-# terraform import google_compute_firewall.default_allow_ssh projects/adlah3/global/firewalls/default-allow-ssh
+# terraform import google_compute_firewall.default_allow_ssh projects/${var.project_id}/global/firewalls/default-allow-ssh

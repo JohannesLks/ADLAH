@@ -1,15 +1,11 @@
 resource "google_compute_firewall" "fw_ingress_bastion_to_internet_ssh" {
-  allow {
-    ports    = ["22"]
-    protocol = "tcp"
-  }
-
+  allow { protocol = "tcp" ports = ["22"] }
   direction     = "INGRESS"
-  name          = "fw-ingress-bastion-to-internet-ssh"
-  network       = "https://www.googleapis.com/compute/v1/projects/adlah3/global/networks/honeynet-vpc"
+  name          = "internet-to-bastion-ssh-${var.env}"
+  network       = google_compute_network.honeynet_vpc.self_link
   priority      = 1000
-  project       = "adlah3"
-  source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["bastion"]
+  project       = var.project_id
+  source_ranges = [var.internet_cidr]
+  target_tags   = ["bastion", var.env]
 }
-# terraform import google_compute_firewall.fw_ingress_bastion_to_internet_ssh projects/adlah3/global/firewalls/fw-ingress-bastion-to-internet-ssh
+# terraform import google_compute_firewall.fw_ingress_bastion_to_internet_ssh projects/${var.project_id}/global/firewalls/internet-to-bastion-ssh-${var.env}

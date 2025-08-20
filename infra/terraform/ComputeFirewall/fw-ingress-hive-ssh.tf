@@ -1,14 +1,11 @@
 resource "google_compute_firewall" "fw_ingress_hive_ssh" {
-  allow {
-    ports    = ["22"]
-    protocol = "tcp"
-  }
-
+  allow { protocol = "tcp" ports = ["22"] }
   direction     = "INGRESS"
-  name          = "fw-ingress-hive-ssh"
-  network       = "https://www.googleapis.com/compute/v1/projects/adlah3/global/networks/core-vpc"
+  name          = "hive-ssh-open-${var.env}"
+  network       = google_compute_network.core_vpc.self_link
   priority      = 1000
-  project       = "adlah3"
-  source_ranges = ["0.0.0.0"]
+  project       = var.project_id
+  source_ranges = [var.internet_cidr] # consider restricting in production
+  target_tags   = ["hive", var.env]
 }
-# terraform import google_compute_firewall.fw_ingress_hive_ssh projects/adlah3/global/firewalls/fw-ingress-hive-ssh
+# terraform import google_compute_firewall.fw_ingress_hive_ssh projects/${var.project_id}/global/firewalls/hive-ssh-open-${var.env}

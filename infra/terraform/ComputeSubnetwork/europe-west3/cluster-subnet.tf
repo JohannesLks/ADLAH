@@ -1,11 +1,11 @@
 resource "google_compute_subnetwork" "cluster_subnet" {
-  ip_cidr_range              = "10.2.0.0/16"
-  name                       = "cluster-subnet"
-  network                    = "https://www.googleapis.com/compute/v1/projects/adlah3/global/networks/cluster-vpc"
+  ip_cidr_range              = var.cluster_subnet_cidr
+  name                       = "cluster-subnet-${var.env}"
+  network                    = google_compute_network.cluster_vpc.self_link
   private_ipv6_google_access = "DISABLE_GOOGLE_ACCESS"
-  project                    = "adlah3"
+  project                    = var.project_id
   purpose                    = "PRIVATE"
-  region                     = "europe-west3"
+  region                     = var.region
   stack_type                 = "IPV4_ONLY"
 }
-# terraform import google_compute_subnetwork.cluster_subnet projects/adlah3/regions/europe-west3/subnetworks/cluster-subnet
+# terraform import google_compute_subnetwork.cluster_subnet projects/${var.project_id}/regions/${var.region}/subnetworks/cluster-subnet

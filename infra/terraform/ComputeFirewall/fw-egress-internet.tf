@@ -1,13 +1,10 @@
 resource "google_compute_firewall" "fw_egress_internet" {
-  allow {
-    protocol = "all"
-  }
-
-  destination_ranges = ["0.0.0.0/0"]
+  allow { protocol = "all" }
+  destination_ranges = [var.internet_cidr]
   direction          = "EGRESS"
-  name               = "fw-egress-internet"
-  network            = "https://www.googleapis.com/compute/v1/projects/adlah3/global/networks/core-vpc"
+  name               = "egress-internet-${var.env}"
+  network            = google_compute_network.core_vpc.self_link
   priority           = 1000
-  project            = "adlah3"
+  project            = var.project_id
 }
-# terraform import google_compute_firewall.fw_egress_internet projects/adlah3/global/firewalls/fw-egress-internet
+# terraform import google_compute_firewall.fw_egress_internet projects/${var.project_id}/global/firewalls/egress-internet-${var.env}

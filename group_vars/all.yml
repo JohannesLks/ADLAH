@@ -5,6 +5,19 @@ cluster_ip: "10.1.0.15"
 sensor_ip: "10.1.0.5"
 hive_ip: "10.1.0.10"
 
+# Infrastructure provisioning variables (Terraform)
+terraform_project_id: "adlah3"
+terraform_region: "europe-west3"
+terraform_zone: "europe-west3-a"
+terraform_env: "prod"
+
+# Optional static external IPs (leave empty for auto allocation)
+terraform_bastion_static_ip: ""
+terraform_hive_static_ip: ""
+
+# Toggle to run infra provisioning
+provision_infrastructure: true
+
 
 
 

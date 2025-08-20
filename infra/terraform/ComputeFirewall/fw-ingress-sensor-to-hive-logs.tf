@@ -1,15 +1,11 @@
 resource "google_compute_firewall" "fw_ingress_sensor_to_hive_logs" {
-  allow {
-    ports    = ["5044", "15044"]
-    protocol = "tcp"
-  }
-
+  allow { protocol = "tcp" ports = ["5044", "15044"] }
   direction     = "INGRESS"
-  name          = "fw-ingress-sensor-to-hive-logs"
-  network       = "https://www.googleapis.com/compute/v1/projects/adlah3/global/networks/core-vpc"
+  name          = "sensor-to-hive-logs-${var.env}"
+  network       = google_compute_network.core_vpc.self_link
   priority      = 1000
-  project       = "adlah3"
-  source_ranges = ["10.1.0.5"]
-  target_tags   = ["hive"]
+  project       = var.project_id
+  source_ranges = [var.sensor_core_ip]
+  target_tags   = ["hive", var.env]
 }
-# terraform import google_compute_firewall.fw_ingress_sensor_to_hive_logs projects/adlah3/global/firewalls/fw-ingress-sensor-to-hive-logs
+# terraform import google_compute_firewall.fw_ingress_sensor_to_hive_logs projects/${var.project_id}/global/firewalls/sensor-to-hive-logs-${var.env}

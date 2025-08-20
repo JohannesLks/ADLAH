@@ -11,3 +11,12 @@ bastion_jump_arg: "-o ProxyJump={{ bastion_user }}@{{ hostvars[bastion_host].ans
 
 # Example ad‑hoc usage:
 # ansible -i ansible/hosts.ini hive -m ping -e "ansible_ssh_common_args='{{ bastion_jump_arg }}'"
+
+# Terraform provisioning controls
+provision_infrastructure: true
+terraform_project_id: "CHANGE_ME_GCP_PROJECT"
+terraform_region: "europe-west3"
+terraform_zone: "europe-west3-a"
+terraform_env: "dev"
+terraform_bastion_static_ip: null  # or "a.b.c.d" to enforce
+terraform_hive_static_ip: null     # or "a.b.c.d" to enforce

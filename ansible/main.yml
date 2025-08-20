@@ -1,6 +1,16 @@
 ---
 # Central playbook: runs roles per host group
 
+- name: Provision / Update GCP infrastructure
+  hosts: localhost
+  gather_facts: false
+  roles:
+    - infra
+  vars:
+    ansible_connection: local
+  tags: [infra]
+  when: provision_infrastructure | default(true) | bool
+
 - name: Prepare hive nodes
   hosts: hive
   become: true
