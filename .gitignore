@@ -20,3 +20,31 @@ ansible/**/nginx/certs/
 ansible/**/env/rl-agent.env
 ansible/**/redis/data/
 ansible/**/kibana/dist/
+# Terraform
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+.terraform/
+.terraform.lock.hcl
+*.tfvars
+*.auto.tfvars
+!*.tfvars.example
+
+# Ansible artifacts
+inventory.*.ini
+inventory.ini
+.retry
+
+# Python
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+
+# SOPS decrypted files (pattern example)
+*.dec.yml
+*.dec.yaml
+
+# SBOM / Scan outputs
+sbom-*.json
+scan-reports/
