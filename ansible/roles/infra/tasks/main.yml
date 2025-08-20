@@ -21,6 +21,33 @@
   delegate_to: localhost
   when: provision_infrastructure | bool
 
+- name: Decrypt GCP service account JSON (vault) to temp file
+  ansible.builtin.slurp:
+    src: "{{ playbook_dir }}/{{ terraform_gcp_sa_vault_file }}"
+  register: sa_vault_raw
+  no_log: true
+  run_once: true
+  delegate_to: localhost
+  when: provision_infrastructure | bool and (terraform_gcp_sa_vault_file is defined) and (terraform_gcp_sa_vault_file | length > 0) and (lookup('ansible.builtin.fileglob', playbook_dir + '/' + terraform_gcp_sa_vault_file, errors='ignore') | length > 0)
+
+- name: Write decrypted SA JSON to temp path
+  ansible.builtin.copy:
+    dest: "{{ playbook_dir }}/.terraform-work/gcp-sa.json"
+    mode: '0600'
+    content: "{{ sa_vault_raw.content | b64decode }}"
+  no_log: true
+  run_once: true
+  delegate_to: localhost
+  when: provision_infrastructure | bool and sa_vault_raw is defined
+
+- name: Set fact with credentials env
+  ansible.builtin.set_fact:
+    terraform_env_vars: >-
+      {{ (terraform_env_vars | default({})) | combine({'GOOGLE_APPLICATION_CREDENTIALS': playbook_dir + '/.terraform-work/gcp-sa.json'}) }}
+  run_once: true
+  delegate_to: localhost
+  when: provision_infrastructure | bool and sa_vault_raw is defined
+
 - name: Write tfvars file from inventory vars
   ansible.builtin.copy:
     dest: "{{ playbook_dir }}/.terraform-work/{{ terraform_env }}.tfvars"
@@ -42,6 +69,7 @@
     chdir: "{{ playbook_dir }}/../infra/terraform"
   run_once: true
   delegate_to: localhost
+  environment: "{{ terraform_env_vars | default({}) }}"
   when: provision_infrastructure | bool
 
 - name: Run terraform apply
@@ -50,6 +78,7 @@
     chdir: "{{ playbook_dir }}/../infra/terraform"
   run_once: true
   delegate_to: localhost
+  environment: "{{ terraform_env_vars | default({}) }}"
   when: provision_infrastructure | bool
 
 - name: Capture terraform outputs (json)
@@ -60,6 +89,7 @@
   run_once: true
   delegate_to: localhost
   changed_when: false
+  environment: "{{ terraform_env_vars | default({}) }}"
   when: provision_infrastructure | bool
 
 - name: Generate dynamic inventory json
@@ -71,6 +101,7 @@
   run_once: true
   delegate_to: localhost
   changed_when: false
+  environment: "{{ terraform_env_vars | default({}) }}"
   when: provision_infrastructure | bool
 
 - name: Write generated inventory json to file

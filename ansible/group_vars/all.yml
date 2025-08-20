@@ -20,3 +20,7 @@ terraform_zone: "europe-west3-a"
 terraform_env: "dev"
 terraform_bastion_static_ip: null  # or "a.b.c.d" to enforce
 terraform_hive_static_ip: null     # or "a.b.c.d" to enforce
+
+# Path (relative to playbook_dir) to vaulted GCP service account JSON (encrypted with ansible-vault).
+# Example: ansible/credentials/gcp-sa.json.vault
+terraform_gcp_sa_vault_file: "ansible/credentials/gcp-sa.json.vault"
