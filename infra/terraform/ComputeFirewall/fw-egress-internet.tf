@@ -1,9 +1,11 @@
 resource "google_compute_firewall" "fw_egress_internet" {
-  allow { protocol = "all" }
+  allow {
+    protocol = "all"
+  }
   destination_ranges = [var.internet_cidr]
   direction          = "EGRESS"
   name               = "egress-internet-${var.env}"
-  network            = google_compute_network.core_vpc.self_link
+  network            = var.core_vpc_self_link
   priority           = 1000
   project            = var.project_id
 }

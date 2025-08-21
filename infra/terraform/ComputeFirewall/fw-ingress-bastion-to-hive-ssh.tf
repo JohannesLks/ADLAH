@@ -1,8 +1,11 @@
 resource "google_compute_firewall" "fw_ingress_bastion_to_hive_ssh" {
-  allow { protocol = "tcp" ports = ["22"] }
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
   direction     = "INGRESS"
   name          = "bastion-to-hive-ssh-${var.env}"
-  network       = google_compute_network.core_vpc.self_link
+  network       = var.core_vpc_self_link
   priority      = 1000
   project       = var.project_id
   source_ranges = [var.bastion_internal_ip]

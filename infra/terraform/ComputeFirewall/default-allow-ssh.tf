@@ -1,5 +1,8 @@
 resource "google_compute_firewall" "default_allow_ssh" {
-  allow { protocol = "tcp" ports = ["22"] }
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
   direction     = "INGRESS"
   name          = "default-allow-ssh-${var.env}"
   network       = "default" # leaving default network ref static; consider removal if unused

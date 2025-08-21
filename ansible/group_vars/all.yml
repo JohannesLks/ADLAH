@@ -1,26 +1,9 @@
 ---
-# Global variables for all hosts
+# This file contains variables that are applied to all hosts.
 
-# Bastion / jump host configuration (for dynamic use inside tasks)
-bastion_host: bastion1
-bastion_user: "{{ hostvars[bastion_host].ansible_user | default('ubuntu') }}"
-bastion_jump_arg: "-o ProxyJump={{ bastion_user }}@{{ hostvars[bastion_host].ansible_host }}"
-
-# Alternative using classic ProxyCommand:
-# bastion_jump_arg: "-o ProxyCommand='ssh -W %h:%p {{ bastion_user }}@{{ hostvars[bastion_host].ansible_host }}'"
-
-# Example ad‑hoc usage:
-# ansible -i ansible/hosts.ini hive -m ping -e "ansible_ssh_common_args='{{ bastion_jump_arg }}'"
-
-# Terraform provisioning controls
-provision_infrastructure: true
-terraform_project_id: "CHANGE_ME_GCP_PROJECT"
-terraform_region: "europe-west3"
-terraform_zone: "europe-west3-a"
-terraform_env: "dev"
-terraform_bastion_static_ip: null  # or "a.b.c.d" to enforce
-terraform_hive_static_ip: null     # or "a.b.c.d" to enforce
-
-# Path (relative to playbook_dir) to vaulted GCP service account JSON (encrypted with ansible-vault).
-# Example: ansible/credentials/gcp-sa.json.vault
-terraform_gcp_sa_vault_file: "ansible/credentials/gcp-sa.json.vault"
+# Variables for Terraform
+# ------------------------
+# These variables are passed directly to the Terraform execution.
+# The keys must match the names of the variables in your .tf files.
+terraform_vars:
+  project_id: "adlah-staging"

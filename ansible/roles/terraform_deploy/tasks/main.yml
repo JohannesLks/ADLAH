@@ -1,0 +1,30 @@
+---
+- name: "Create a temporary file for GCP credentials"
+  ansible.builtin.tempfile:
+    state: file
+    suffix: .json
+  register: temp_gcp_credentials_file
+  changed_when: false
+
+- name: "Write GCP credentials to the temporary file"
+  ansible.builtin.copy:
+    content: "{{ gcp_service_account_json }}"
+    dest: "{{ temp_gcp_credentials_file.path }}"
+    mode: '0600'
+  no_log: true
+  changed_when: false
+
+- name: "Run Terraform apply"
+  community.general.terraform:
+    project_path: "{{ terraform_project_path }}"
+    state: present
+    force_init: true
+    variables: "{{ terraform_vars | default({}) }}"
+  environment:
+    GOOGLE_APPLICATION_CREDENTIALS: "{{ temp_gcp_credentials_file.path }}"
+  
+- name: "Clean up the temporary credentials file"
+  ansible.builtin.file:
+    path: "{{ temp_gcp_credentials_file.path }}"
+    state: absent
+  changed_when: false

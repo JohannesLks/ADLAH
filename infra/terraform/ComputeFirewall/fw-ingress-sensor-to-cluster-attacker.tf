@@ -1,8 +1,11 @@
 resource "google_compute_firewall" "fw_ingress_sensor_to_cluster_attacker" {
-  allow { protocol = "tcp" ports = ["2222"] }
+  allow {
+    protocol = "tcp"
+    ports    = ["2222"]
+  }
   direction     = "INGRESS"
   name          = "sensor-to-cluster-attacker-${var.env}"
-  network       = google_compute_network.core_vpc.self_link
+  network       = var.core_vpc_self_link
   priority      = 1000
   project       = var.project_id
   source_ranges = [var.sensor_core_ip]

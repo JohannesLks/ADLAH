@@ -8,6 +8,6 @@ data "google_client_config" "current" {}
 locals {
   compute_service_account_email = coalesce(
     var.compute_service_account_email,
-    "${data.google_client_config.current.project_number}-compute@developer.gserviceaccount.com"
+    "${data.google_client_config.current.project}-compute@developer.gserviceaccount.com"
   )
 }

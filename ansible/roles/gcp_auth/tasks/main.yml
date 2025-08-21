@@ -1,0 +1,4 @@
+---
+- name: "Load GCP service account credentials from Ansible Vault"
+  ansible.builtin.set_fact:
+    gcp_service_account_json: "{{ lookup('ansible.builtin.file', playbook_dir + '/../ansible/credentials/gcp-sa.json.vault') }}"

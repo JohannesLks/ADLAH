@@ -1,7 +1,7 @@
 resource "google_compute_subnetwork" "core_subnet2" {
   ip_cidr_range              = var.core_subnet2_cidr
   name                       = "core-subnet2-${var.env}"
-  network                    = google_compute_network.core_vpc.self_link
+  network                    = var.core_vpc_self_link
   private_ipv6_google_access = "DISABLE_GOOGLE_ACCESS"
   project                    = var.project_id
   purpose                    = "PRIVATE"

@@ -1,8 +1,11 @@
 resource "google_compute_firewall" "fw_ingress_internet_to_hive" {
-  allow { protocol = "tcp" ports = ["80", "443"] }
+  allow {
+    protocol = "tcp"
+    ports    = ["80", "443"]
+  }
   direction     = "INGRESS"
   name          = "internet-to-hive-${var.env}"
-  network       = google_compute_network.core_vpc.self_link
+  network       = var.core_vpc_self_link
   priority      = 100
   project       = var.project_id
   source_ranges = [var.internet_cidr]
