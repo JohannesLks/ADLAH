@@ -1,0 +1,67 @@
+name: Security & Compliance
+
+on:
+  pull_request:
+    paths:
+      - '**/*.tf'
+      - '**/*.yml'
+      - '**/*.yaml'
+      - '**/*.py'
+      - '.github/workflows/security.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'infra/terraform/**'
+
+permissions:
+  contents: read
+
+jobs:
+  static-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install tooling
+        run: |
+          pip install ansible ansible-lint
+          curl -sSfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          curl -sSfL https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64 -o /usr/local/bin/tfsec && chmod +x /usr/local/bin/tfsec
+          curl -sSfL https://github.com/bridgecrewio/checkov/releases/latest/download/checkov_3.2.266_linux_amd64.zip -o checkov.zip && unzip -o checkov.zip -d /usr/local/bin && rm checkov.zip
+          curl -sSfL https://github.com/trufflesecurity/trufflehog/releases/latest/download/trufflehog_$(uname -s)_$(uname -m).tar.gz | tar xz --strip-components=1 -C /usr/local/bin trufflehog
+
+      - name: Terraform format & validate
+        run: |
+          terraform -chdir=infra/terraform/envs/staging fmt -check
+          terraform -chdir=infra/terraform/envs/staging validate || true
+
+      - name: Terraform security scan (tfsec)
+        run: tfsec infra/terraform --format json --out tfsec-report.json || true
+
+      - name: Terraform compliance (checkov)
+        run: checkov -d infra/terraform -o json > checkov-report.json || true
+
+      - name: Secret scan (trufflehog)
+        run: trufflehog filesystem --no-update --only-verified . || true
+
+      - name: Ansible lint
+        run: ansible-lint -q || true
+
+      - name: Trivy filesystem scan
+        run: trivy fs --severity HIGH,CRITICAL --exit-code 0 --format json --output trivy-fs.json . || true
+
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: |
+            tfsec-report.json
+            checkov-report.json
+            trivy-fs.json
+        if-no-files-found: ignore

@@ -1,0 +1,9 @@
+---
+# This file contains variables that are applied to all hosts.
+
+# Variables for Terraform
+# ------------------------
+# These variables are passed directly to the Terraform execution.
+# The keys must match the names of the variables in your .tf files.
+terraform_vars:
+  project_id: "adlah-staging"

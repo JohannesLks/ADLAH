@@ -1,0 +1,167 @@
+name: GCP Infra + Ansible Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment (staging|prod)"
+        required: true
+        default: "staging"
+      apply:
+        description: "Terraform apply ausführen (true/false)"
+        required: true
+        default: "true"
+      run_ansible:
+        description: "Ansible Playbooks ausführen (true/false)"
+        required: true
+        default: "true"
+  pull_request:
+    paths:
+      - 'infra/terraform/**'
+      - 'ansible/**'
+      - '.github/workflows/infra-deploy.yml'
+
+concurrency:
+  group: adlah-${{ github.event.inputs.environment || 'staging' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  terraform:
+    name: Terraform (${{ github.event.inputs.environment || 'staging' }})
+    runs-on: ubuntu-latest
+    outputs:
+      env_name: ${{ steps.envctx.outputs.env_name }}
+      inventory_content: ${{ steps.inv.outputs.inventory_content }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Determine Environment
+        id: envctx
+        run: |
+          ENV_INPUT="${{ github.event.inputs.environment || 'staging' }}"
+          echo "env_name=$ENV_INPUT" >> $GITHUB_OUTPUT
+          if [ "$ENV_INPUT" = "prod" ]; then echo "project=${{ secrets.GCP_PROJECT_PROD }}" >> $GITHUB_OUTPUT; else echo "project=${{ secrets.GCP_PROJECT_STAGING }}" >> $GITHUB_OUTPUT; fi
+
+      - name: Check required secrets
+        run: |
+          missing=0
+          for s in GCP_PROJECT_STAGING SSH_PUBLIC_KEY; do [ -z "${{ secrets[s] }}" ] && echo "Missing secret $s" && missing=1; done || true
+          [ "${{ steps.envctx.outputs.env_name }}" = "prod" ] && [ -z "${{ secrets.GCP_PROJECT_PROD }}" ] && echo "Missing secret GCP_PROJECT_PROD" && missing=1 || true
+          if [ $missing -eq 1 ]; then echo "Secrets missing"; exit 1; fi
+
+      - name: Auth GCP via Workload Identity Federation
+        if: ${{ secrets.GCP_WIF_PROVIDER != '' && secrets.GCP_WIF_SERVICE_ACCOUNT != '' }}
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_WIF_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_lifetime: 1200s
+
+      - name: Auth GCP via Service Account JSON (Fallback)
+        if: ${{ secrets.GCP_WIF_PROVIDER == '' || secrets.GCP_WIF_SERVICE_ACCOUNT == '' }}
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY_JSON }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+            terraform_version: 1.8.5
+
+      - name: Terraform Init
+        working-directory: infra/terraform/envs/${{ steps.envctx.outputs.env_name }}
+        env:
+          TF_VAR_project_id: ${{ steps.envctx.outputs.project }}
+        run: terraform init -input=false
+
+      - name: Terraform Validate
+        working-directory: infra/terraform/envs/${{ steps.envctx.outputs.env_name }}
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        working-directory: infra/terraform/envs/${{ steps.envctx.outputs.env_name }}
+        env:
+          TF_VAR_project_id: ${{ steps.envctx.outputs.project }}
+          TF_VAR_metadata_ssh_keys: ${{ secrets.SSH_PUBLIC_KEY }}
+        run: terraform plan -var-file=${{ steps.envctx.outputs.env_name }}.tfvars -out=tfplan
+
+      - name: Terraform Apply
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.apply == 'true' }}
+        working-directory: infra/terraform/envs/${{ steps.envctx.outputs.env_name }}
+        env:
+          TF_VAR_project_id: ${{ steps.envctx.outputs.project }}
+          TF_VAR_metadata_ssh_keys: ${{ secrets.SSH_PUBLIC_KEY }}
+        run: terraform apply -auto-approve tfplan
+
+      - name: Export Inventory
+        id: inv
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.apply == 'true' }}
+        working-directory: infra/terraform/envs/${{ steps.envctx.outputs.env_name }}
+        run: |
+          terraform output -raw ansible_inventory > inventory.ini
+          echo 'inventory_content<<EOF' >> $GITHUB_OUTPUT
+          cat inventory.ini >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
+
+      - name: Upload Inventory Artifact
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.apply == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: inventory-${{ steps.envctx.outputs.env_name }}
+          path: infra/terraform/envs/${{ steps.envctx.outputs.env_name }}/inventory.ini
+
+  ansible:
+    name: Ansible (${{ needs.terraform.outputs.env_name }})
+    needs: terraform
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_ansible == 'true' && github.event.inputs.apply == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Inventory
+        uses: actions/download-artifact@v4
+        with:
+          name: inventory-${{ needs.terraform.outputs.env_name }}
+          path: inventory
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Ansible + Collections
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible==9.5.1
+          if [ -f ansible/requirements.yml ]; then ansible-galaxy install -r ansible/requirements.yml; fi
+
+      - name: Configure SSH Key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Disable host key checking
+        run: echo -e "[defaults]\nhost_key_checking=False" > ansible.cfg
+
+      - name: Wait for SSH Availability
+        run: |
+          for host in cluster hive sensor; do
+            echo "Checking $host ..."
+            for i in $(seq 1 20); do
+              if ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 ubuntu@$(grep "^$host " inventory/inventory.ini | awk '{print $2}' | cut -d'=' -f2) 'echo ok' 2>/dev/null; then
+                echo "$host reachable"; break; fi; sleep 5; done
+            done
+
+      - name: Run Ansible Playbook
+        run: ansible-playbook -i inventory/inventory.ini ansible/main.yml -vv

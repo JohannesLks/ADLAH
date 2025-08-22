@@ -1,0 +1,13 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    # Define an absolute path to the Terraform project directory.
+    # 'playbook_dir' is an Ansible magic variable for the directory of the current playbook.
+    terraform_project_path: "{{ playbook_dir }}/../infra/terraform"
+
+  roles:
+    - gcp_auth
+    - terraform_deploy
