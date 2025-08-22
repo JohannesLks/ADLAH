@@ -4,6 +4,8 @@ resource "google_compute_instance" "hive" {
   zone         = var.zone
   machine_type = var.hive_machine_type
 
+ tags = ["hive"]
+
   boot_disk {
     auto_delete = true
     device_name = "hive"

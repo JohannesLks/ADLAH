@@ -4,6 +4,8 @@ resource "google_compute_instance" "bastion" {
   zone         = var.zone
   machine_type = var.bastion_machine_type
 
+  tags = ["bastion"]
+
   boot_disk {
     auto_delete = true
     device_name = "bastion"

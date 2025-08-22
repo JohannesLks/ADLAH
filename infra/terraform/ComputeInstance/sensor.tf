@@ -4,6 +4,8 @@ resource "google_compute_instance" "sensor" {
   zone         = var.zone
   machine_type = var.sensor_machine_type
 
+ tags = ["sensor"]
+
   boot_disk {
     auto_delete = true
     device_name = "sensor"

@@ -4,6 +4,8 @@ resource "google_compute_instance" "cluster" {
   zone         = var.zone
   machine_type = var.cluster_machine_type
 
+ tags = ["cluster"]
+
   boot_disk {
     auto_delete = true
     device_name = "cluster"
