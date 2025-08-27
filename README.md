@@ -1,5 +1,5 @@
 # ADLAH
-Adaptive Deep Learning Anomaly Detection Honeynet (ADLAH) 
+Adaptive Deep Learning Anomaly Detection Honeynet (*ADLAH*) 
 
 ## Read the [Docs](https://docs.adlah.dev)
 
