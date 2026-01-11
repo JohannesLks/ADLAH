@@ -43,7 +43,7 @@ error() { echo -e "\e[31m[REINSTALL] \e[0m $*" >&2; }
 # Check if password is provided
 check_password() {
     if [[ -z "${PASS:-}" ]]; then
-        read -rsp "Bitte Kibana-/Grafana-Passwort setzen: " PASS; echo
+        read -rsp "Please set Kibana/Grafana password: " PASS; echo
     fi
 }
 

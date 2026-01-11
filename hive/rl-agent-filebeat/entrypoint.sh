@@ -17,7 +17,7 @@
 CERTDIR=/usr/share/filebeat/certs
 
 while [ ! -f "$CERTDIR/logstash.crt" ] || [ ! -f "$CERTDIR/logstash.key" ]; do
-  echo "→ warte auf Zertifikate in $CERTDIR…"
+  echo "→ waiting for certificates in $CERTDIR..."
   sleep 2
 done
 

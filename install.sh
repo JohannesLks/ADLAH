@@ -25,7 +25,7 @@ EXIT_DOCKER_FAILED=5
 EXIT_SYSTEM_SERVICE_FAILED=6
 EXIT_QUIT=8
 
-# ── Globale Variablen ─────────────────────────────────────────────────────────
+# ── Global Variables ─────────────────────────────────────────────────────────
 USER_NAME=$(whoami)
 REQUIREMENTS_FILE="./requirements.txt"
 ENV_FILE="$HOME/.adlah_env"
@@ -33,61 +33,61 @@ SSH_KEY_PATH="$HOME/.ssh/id_rsa"
 SSH_PORT=22
 KIBANA_ENCRYPTION_KEY=$(openssl rand -base64 32)
 
-# ── Hilfsfunktionen ──────────────────────────────────────────────────────────
+# ── Helper Functions ──────────────────────────────────────────────────────────
 check_command() { command -v "$1" >/dev/null 2>&1; }
 
-# Hinzugefügte Farben und Notizen
+# Added colors and notes
 C0='\e[0m'; C1='\e[36m'; C2='\e[32m'; C3='\e[33m'; C4='\e[31m'
 info() { echo -e "${C2}[install]${C0} $*"; }
 note() { echo -e "${C1}[install]${C0} $*"; }
 warn() { echo -e "${C3}[install] $*${C0}"; }
 die()  { echo -e "${C4}[install] $*${C0}" >&2; exit 1; }
 
-# Robuste Subprozess-Ausführung mit Exit-Code-Behandlung
+# Robust subprocess execution with exit code handling
 run_or_die() {
     local cmd="$*"
     local exit_code
-    info "Führe aus: $cmd"
+    info "Executing: $cmd"
     eval "$cmd"
     exit_code=$?
     if [ $exit_code -ne 0 ]; then
-        die "Befehl fehlgeschlagen (Exit-Code: $exit_code): $cmd"
+        die "Command failed (Exit code: $exit_code): $cmd"
     fi
     return $exit_code
 }
 
-# Sichere Subprozess-Ausführung mit Warnung bei Fehlern
+# Safe subprocess execution with warning on error
 run_or_warn() {
     local cmd="$*"
     local exit_code
-    info "Führe aus: $cmd"
+    info "Executing: $cmd"
     eval "$cmd"
     exit_code=$?
     if [ $exit_code -ne 0 ]; then
-        warn "Befehl fehlgeschlagen (Exit-Code: $exit_code): $cmd"
+        warn "Command failed (Exit code: $exit_code): $cmd"
     fi
     return $exit_code
 }
 
-# Prüfe ob Verzeichnis/Datei existiert
+# Check if directory/file exists
 check_path_exists() {
     local path="$1"
     local description="${2:-$path}"
     if [[ ! -e "$path" ]]; then
-        die "Erforderlicher Pfad nicht gefunden: $description ($path)"
+        die "Required path not found: $description ($path)"
     fi
 }
 
-# Prüfe ob Verzeichnis existiert und nicht leer ist
+# Check if directory exists and is not empty
 check_dir_not_empty() {
     local dir="$1"
     local description="${2:-$dir}"
     check_path_exists "$dir" "$description"
     if [[ ! -d "$dir" ]]; then
-        die "Pfad ist kein Verzeichnis: $description ($dir)"
+        die "Path is not a directory: $description ($dir)"
     fi
     if [[ -z "$(ls -A "$dir" 2>/dev/null)" ]]; then
-        die "Verzeichnis ist leer: $description ($dir)"
+        die "Directory is empty: $description ($dir)"
     fi
 }
 
@@ -97,108 +97,108 @@ abort_if_fail() {
     eval "$cmd"
     exit_code=$?
     if [ $exit_code -ne 0 ]; then
-        die "Kritischer Fehler bei: $cmd (Exit-Code: $exit_code)"
+        die "Critical error at: $cmd (Exit code: $exit_code)"
     fi
     return $exit_code
 }
 
-# Liste aller phys./virtuellen NICs außer Loopback & Container-Bridges
+# List all physical/virtual NICs except loopback & container bridges
 list_nics() { 
     local nics
     nics=$(ip -o link show | awk -F': ' '{print $2}' | grep -vE 'lo|docker|br|vir|veth')
     if [[ -z "$nics" ]]; then
-        die "Keine Netzwerk-Interfaces gefunden"
+        die "No network interfaces found"
     fi
     echo "$nics"
 }
 
-# ── Validierungsfunktion ─────────────────────────────────────────────────────
+# ── Validation Function ─────────────────────────────────────────────────────
 validate_installation_parameters() {
   local errors=()
   local warnings=()
 
-  info "🔍 Validiere Installationsparameter..."
+  info "🔍 Validating installation parameters..."
 
-  # Prüfe Installations-Typ
+  # Check installation type
   if [[ -z "$INSTALL_TYPE" ]]; then
-    errors+=("Installationstyp ist nicht gesetzt (hive oder sensor)")
+    errors+=("Installation type is not set (hive or sensor)")
   elif [[ "$INSTALL_TYPE" != "hive" && "$INSTALL_TYPE" != "sensor" ]]; then
-    errors+=("Ungültiger Installationstyp: '$INSTALL_TYPE' (muss 'hive' oder 'sensor' sein)")
+    errors+=("Invalid installation type: '$INSTALL_TYPE' (must be 'hive' or 'sensor')")
   fi
 
-  # Hive-spezifische Validierung
+  # Hive-specific validation
   if [[ "$INSTALL_TYPE" == "hive" ]]; then
     if [[ -z "$KIBANA_USER" ]]; then
-      errors+=("Kibana-Benutzername ist für Hive-Installation erforderlich")
+      errors+=("Kibana username is required for Hive installation")
     elif [[ ! "$KIBANA_USER" =~ ^[a-zA-Z0-9_-]+$ ]]; then
-      errors+=("Kibana-Benutzername enthält ungültige Zeichen (nur a-z, A-Z, 0-9, _, - erlaubt)")
+      errors+=("Kibana username contains invalid characters (only a-z, A-Z, 0-9, _, - allowed)")
     fi
 
     if [[ -z "$KIBANA_PASSWORD" ]]; then
-      errors+=("Kibana-Passwort ist für Hive-Installation erforderlich")
+      errors+=("Kibana password is required for Hive installation")
     elif [[ ${#KIBANA_PASSWORD} -lt 8 ]]; then
-      warnings+=("Kibana-Passwort ist sehr kurz (weniger als 8 Zeichen)")
+      warnings+=("Kibana password is very short (less than 8 characters)")
     fi
   fi
 
-  # Sensor-spezifische Validierung
+  # Sensor-specific validation
   if [[ "$INSTALL_TYPE" == "sensor" ]]; then
     if [[ -z "$HIVE_IP" ]]; then
-      errors+=("Hive-IP ist für Sensor-Installation erforderlich")
+      errors+=("Hive IP is required for Sensor installation")
     elif ! [[ "$HIVE_IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-      errors+=("Ungültige Hive-IP-Adresse: '$HIVE_IP'")
+      errors+=("Invalid Hive IP address: '$HIVE_IP'")
     fi
 
     if [[ -z "$MADCAT_IF" ]]; then
-      errors+=("MADCAT-Interface ist für Sensor-Installation erforderlich")
+      errors+=("MADCAT interface is required for Sensor installation")
     else
-      # Prüfe ob Interface existiert
+      # Check if interface exists
       if ! list_nics | grep -qx "$MADCAT_IF"; then
-        errors+=("MADCAT-Interface '$MADCAT_IF' existiert nicht")
+        errors+=("MADCAT interface '$MADCAT_IF' does not exist")
       fi
     fi
 
-    # Optional: Management Interface validieren
+    # Optional: Validate management interface
     if [[ -n "$MGMT_IF" ]]; then
       if ! list_nics | grep -qx "$MGMT_IF"; then
-        warnings+=("Management-Interface '$MGMT_IF' existiert nicht und wird ignoriert")
+        warnings+=("Management interface '$MGMT_IF' does not exist and will be ignored")
       fi
     fi
   fi
 
-  # System-Voraussetzungen prüfen
+  # Check system requirements
   if ! check_command docker; then
-    warnings+=("Docker ist nicht installiert - wird automatisch installiert")
+    warnings+=("Docker is not installed - will be installed automatically")
   fi
 
   if ! check_command docker-compose && ! docker compose version >/dev/null 2>&1; then
-    warnings+=("Docker Compose ist nicht verfügbar - wird automatisch installiert")
+    warnings+=("Docker Compose is not available - will be installed automatically")
   fi
 
-  # SSH-Key prüfen
+  # Check SSH key
   if [[ ! -f "$SSH_KEY_PATH" ]]; then
-    warnings+=("SSH-Key nicht gefunden - wird automatisch generiert")
+    warnings+=("SSH key not found - will be generated automatically")
   fi
 
-  # Berechtigungen prüfen
+  # Check permissions
   if [[ $EUID -eq 0 ]]; then
-    errors+=("Script sollte nicht als root ausgeführt werden")
+    errors+=("Script should not be run as root")
   fi
 
-  # Verzeichnis-Berechtigungen prüfen
+  # Check directory permissions
   if [[ ! -w "$HOME" ]]; then
-    errors+=("Keine Schreibberechtigung im Home-Verzeichnis")
+    errors+=("No write permission in home directory")
   fi
 
-  # Zeige Warnings an
+  # Show warnings
   if [[ ${#warnings[@]} -gt 0 ]]; then
     echo
     for warning in "${warnings[@]}"; do
-      warn "WARNUNG: $warning"
+      warn "WARNING: $warning"
     done
   fi
 
-  # Zeige Errors an und beende bei Fehlern
+  # Show errors and exit on failure
   if [[ ${#errors[@]} -gt 0 ]]; then
     echo
     die "Validierungsfehler gefunden:${errors[*]/#/$'\n  - '}"
@@ -210,45 +210,44 @@ validate_installation_parameters() {
 
 run_compose_stack() {
   local dir="$1"
-  echo "Starte Docker Compose in: $dir"
-  cd "$dir" || die "Konnte nicht in Verzeichnis wechseln: $dir"
+  echo "Starting Docker Compose in: $dir"
+  cd "$dir" || die "Could not change to directory: $dir"
   
   # Prüfe ob docker-compose.yml existiert
-  check_path_exists "docker-compose.yml" "Docker Compose Konfiguration"
+  check_path_exists "docker-compose.yml" "Docker Compose Configuration"
   
-  # Entferne evtl. alte Container, um Typ-Konflikte bei Bind-Mounts (File vs. Dir) zu vermeiden
+  # Remove potential old containers to avoid type conflicts with bind mounts (file vs dir)
   run_or_warn docker compose down -v --remove-orphans
   
-  # Starte Stack mit Fehlerbehandlung
+  # Start stack with error handling
   if ! docker compose up -d --force-recreate 2>&1 | tee /tmp/docker_compose.log; then
-    echo "Docker Compose fehlgeschlagen:"
+    echo "Docker Compose failed:"
     cat /tmp/docker_compose.log
-    die "Docker Compose Stack konnte nicht gestartet werden"
+    die "Failed to start Docker Compose stack"
   fi
   
-  # Prüfe ob Container laufen
+  # Check if containers are running
   if ! docker compose ps | grep -q "Up"; then
-    die "Docker Compose Container laufen nicht korrekt"
+    die "Docker Compose containers are not running correctly"
   fi
   
   docker compose ps
 }
 
 # ---------------------------------------------------------------------------
-# Neue robuste Helfer
+# New robust helpers
 # ---------------------------------------------------------------------------
 ensure_dir() {
-  # Erstellt Verzeichnis rekursiv (ggf. mit sudo) und setzt Ownership auf den
-  # aktuellen Benutzer, damit nachfolgende Schreiboperationen ohne sudo
-  # funktionieren.
+  # Creates directory recursively (with sudo if needed) and sets ownership to the
+  # current user, so subsequent write operations work without sudo.
   local path="$1"
   run_or_die sudo mkdir -p "$path"
   run_or_die sudo chown "$USER":"$USER" "$path"
 }
 
 cleanup_maybe_dir() {
-  # Löscht eine bestehende Datei oder ein Verzeichnis gleichen Namens (sudo),
-  # wenn es existiert. Verhindert "Is a directory"-Fehler.
+  # Deletes an existing file or directory of the same name (sudo),
+  # if it exists. Prevents "Is a directory" errors.
   local target="$1"
   if [ -e "$target" ]; then
     run_or_warn sudo rm -rf "$target"
@@ -258,7 +257,7 @@ cleanup_maybe_dir() {
 
 # ────────────────────────────────────────────────────────────────────────────
 
-# ── Parameter-Parsing & Moduswahl ───────────────────────────────────────────
+# ── Parameter Parsing & Mode Selection ─────────────────────────────────────
 usage() {
   cat <<EOF
 ADLAH Installation Script
@@ -284,19 +283,19 @@ Examples:
   $0 --type hive  # Interactive mode for missing parameters
 
 Exit Codes:
-  $EXIT_SUCCESS - Erfolgreich
-  $EXIT_INVALID_PARAMS - Ungültige Parameter
-  $EXIT_MISSING_DEPS - Fehlende Abhängigkeiten
-  $EXIT_PERMISSION_DENIED - Berechtigungsfehler
-  $EXIT_RSYNC_FAILED - Kopierfehler
-  $EXIT_DOCKER_FAILED - Docker-Fehler
-  $EXIT_SYSTEM_SERVICE_FAILED - Systemdienst-Fehler
-  $EXIT_QUIT - Benutzer-Abbruch
+  $EXIT_SUCCESS - Success
+  $EXIT_INVALID_PARAMS - Invalid parameters
+  $EXIT_MISSING_DEPS - Missing dependencies
+  $EXIT_PERMISSION_DENIED - Permission denied
+  $EXIT_RSYNC_FAILED - Copy failed
+  $EXIT_DOCKER_FAILED - Docker error
+  $EXIT_SYSTEM_SERVICE_FAILED - System service error
+  $EXIT_QUIT - User aborted
 EOF
   exit 0
 }
 
-# Standardwerte
+# Default values
 INSTALL_TYPE=""
 KIBANA_USER=""
 KIBANA_PASSWORD=""
@@ -305,12 +304,12 @@ MADCAT_IF=""
 MGMT_IF=""
 AUTO_CONFIRM="no"
 
-# Argumente parsen
+# Parse arguments
 if [[ $# -gt 0 ]]; then
-  # Temp-Argument für Passwort, um Fehler bei leerem $PASS zu vermeiden
+  # Temp argument for password to avoid errors with empty $PASS
   CLI_PASSWORD="CLI_PASSWORD_NOT_SET"
 
-  # Argumente parsen
+  # Parse arguments
   eval set -- "$(getopt -o 'yh' --longoptions 'type:,user:,password:,hive-ip:,madcat-if:,mgmt-if:,yes,help' -n "$0" -- "$@")"
 
   while true; do
@@ -324,142 +323,142 @@ if [[ $# -gt 0 ]]; then
       -y|--yes) AUTO_CONFIRM="yes"; shift;;
       -h|--help) usage; shift;;
       --) shift; break;;
-      *) die "Interner Fehler beim Parsen!";;
+      *) die "Internal error during parsing!";;
     esac
   done
 
-  # Passwort aus CLI oder $PASS-Variable übernehmen
+  # Adopt password from CLI or $PASS variable
   if [[ "$CLI_PASSWORD" != "CLI_PASSWORD_NOT_SET" ]]; then
     KIBANA_PASSWORD="$CLI_PASSWORD"
   elif [[ -n "${PASS:-}" ]]; then
     KIBANA_PASSWORD="$PASS"
   fi
 else
-  # Keine Argumente - zeige kurze Hilfe und frage interaktiv
+  # No arguments - show short help and ask interactively
   echo "ADLAH Installation Script"
-  echo "Verwende: $0 --help für vollständige Optionen"
-  echo "Oder starte ohne Parameter für interaktiven Modus"
+  echo "Use: $0 --help for full options"
+  echo "Or start without parameters for interactive mode"
   echo
 fi
 
-# Interaktive Abfrage fehlender Parameter
+# Interactive query for missing parameters
 if [[ -z "$INSTALL_TYPE" ]]; then
-  echo -e "\nWillkommen bei ADLAH"
+  echo -e "\nWelcome to ADLAH"
   echo "[H] Hive – ELK + RL-Agent"
   echo "[S] Sensor – MADCAT + Logweiterleitung"
   echo "[Q] Quit"
 
   while true; do
-    read -rp "Auswahl (h/s/q): " choice
+    read -rp "Selection (h/s/q): " choice
     case "${choice,,}" in
       h) INSTALL_TYPE="hive"; break;;
       s) INSTALL_TYPE="sensor"; break;;
-      q) echo "Abgebrochen."; exit $EXIT_QUIT;;
-      *) warn "Ungültig. Bitte h, s oder q.";;
+      q) echo "Aborted."; exit $EXIT_QUIT;;
+      *) warn "Invalid. Please h, s or q.";;
     esac
   done
 fi
 
-# Hive-spezifische interaktive Abfragen
+# Hive-specific interactive queries
 if [[ "$INSTALL_TYPE" == "hive" ]]; then
   if [[ -z "$KIBANA_USER" ]]; then
-    read -rp "Kibana-Nutzername: " KIBANA_USER
+    read -rp "Kibana username: " KIBANA_USER
   fi
   if [[ -z "$KIBANA_PASSWORD" ]]; then
-    read -rsp "Kibana-Passwort: " KIBANA_PASSWORD; echo
+    read -rsp "Kibana password: " KIBANA_PASSWORD; echo
   fi
 fi
 
-# Sensor-spezifische interaktive Abfragen
+# Sensor-specific interactive queries
 if [[ "$INSTALL_TYPE" == "sensor" ]]; then
   if [[ -z "$HIVE_IP" ]]; then
-    read -rp "Hive-IP (z. B. 10.1.0.10): " HIVE_IP
+    read -rp "Hive IP (e.g. 10.1.0.10): " HIVE_IP
   fi
   if [[ -z "$MADCAT_IF" ]]; then
     echo
-    echo "Verfügbare Interfaces:"
+    echo "Available interfaces:"
     list_nics
     while true; do
-      read -rp "Interface für MADCAT (Packet-Capture/DNAT): " MADCAT_IF
+      read -rp "Interface for MADCAT (Packet Capture/DNAT): " MADCAT_IF
       list_nics | grep -qx "$MADCAT_IF" && break
-      warn "Ungültiges Interface."
+      warn "Invalid interface."
     done
   fi
   if [[ -z "$MGMT_IF" ]]; then
-    read -rp "Interface für Management (IAP/SSH) [Enter = Auto]: " MGMT_IF
+    read -rp "Interface for Management (IAP/SSH) [Enter = Auto]: " MGMT_IF
   fi
 fi
 
-# ── Parameter-Validierung ───────────────────────────────────────────────────
-# Validiere alle Parameter BEVOR die Installation beginnt
+# ── Parameter Validation ───────────────────────────────────────────────────
+# Validate all parameters BEFORE installation starts
 validate_installation_parameters
 
 
-# ── System-Vorbereitung ──────────────────────────────────────────────────────
-info "Initialisiere sudo-Sitzung…"
+# ── System Preparation ──────────────────────────────────────────────────────
+info "Initializing sudo session..."
 run_or_die sudo -v
 
-info "Prüfe Docker…"
+info "Checking Docker..."
 if ! check_command docker; then
-  info "Docker wird installiert…"
+  info "Installing Docker..."
   run_or_die curl -fsSL https://get.docker.com | sudo sh
 else
-  info "Docker vorhanden."
+  info "Docker present."
 fi
 
 if ! id -nG "$USER_NAME" | grep -qw docker; then
-  info "Füge $USER_NAME zur Docker-Gruppe hinzu…"
+  info "Adding $USER_NAME to docker group..."
   run_or_die sudo usermod -aG docker "$USER_NAME"
-  warn "Bitte neu einloggen oder: sudo reboot"
+  warn "Please log in again or: sudo reboot"
   exit $EXIT_PERMISSION_DENIED
 fi
 
-info "Prüfe Docker-Compose Plugin…"
+info "Checking Docker Compose plugin..."
 if ! docker compose version >/dev/null 2>&1; then
   run_or_die sudo apt update
   run_or_die sudo apt install -y docker-compose-plugin
 fi
 
 if [ -f "$REQUIREMENTS_FILE" ]; then
-  info "Installiere Python-Abhängigkeiten…"
+  info "Installing Python dependencies..."
   run_or_die pip3 install --upgrade pip
   run_or_die pip3 install -r "$REQUIREMENTS_FILE"
 fi
 
 if [ ! -f "$SSH_KEY_PATH" ]; then
-  info "Generiere neuen SSH-Key…"
+  info "Generating new SSH key..."
   run_or_die ssh-keygen -t rsa -b 4096 -f "$SSH_KEY_PATH" -N ""
 fi
 
-info "Setze SSH-Port ($SSH_PORT)…"
+info "Setting SSH port ($SSH_PORT)..."
 SSH_DROPIN="/etc/ssh/sshd_config.d/20-adlah-port.conf"
-# Schreibe Port in Drop-In, nicht in die Hauptdatei, um Korruption zu vermeiden
+# Write port to drop-in, not to the main file, to avoid corruption
 CURRENT_PORT_LINE=$(sudo bash -lc "test -f '$SSH_DROPIN' && grep -E '^Port[[:space:]]+' '$SSH_DROPIN' | head -n1 || true")
 if [[ "$CURRENT_PORT_LINE" != "Port $SSH_PORT" ]]; then
   run_or_die sudo mkdir -p /etc/ssh/sshd_config.d
-  # Sicher schreiben via sudo tee; nur printf-Output wird gepiped
+  # Safely write via sudo tee; only printf output is piped
   run_or_die bash -lc "printf '%s\\n' 'Port $SSH_PORT' | sudo tee '$SSH_DROPIN' >/dev/null"
-  # Konfiguration validieren, dann Dienst neustarten
+  # Validate configuration, then restart service
   abort_if_fail sudo sshd -t
   run_or_die sudo systemctl restart ssh || sudo systemctl restart sshd
 else
-  note "SSH-Port bereits konfiguriert."
+  note "SSH port already configured."
 fi
 
 # ── HIVE Installation ────────────────────────────────────────────────────────
 if [[ $INSTALL_TYPE == "hive" ]]; then
-  note "Kibana-Anmeldedaten konfiguriert."
-  info "Redis wird lokal im Hive-Stack bereitgestellt."
+  note "Kibana credentials configured."
+  info "Redis is provided locally in the Hive stack."
 
-  # Bestätigung
+  # Confirmation
   if [[ "$AUTO_CONFIRM" != "yes" ]]; then
-    read -rp "Installationsmodus HIVE. Fortfahren? (y/N): " confirm
+    read -rp "Installation mode HIVE. Continue? (y/N): " confirm
     if [[ "${confirm,,}" != "y" && "${confirm,,}" != "yes" ]]; then
-      info "Installation abgebrochen."
+      info "Installation aborted."
       exit $EXIT_QUIT
     fi
   else
-    info "Automatische Bestätigung aktiviert - fahre mit Hive-Installation fort"
+    info "Automatic confirmation enabled - continuing with Hive installation"
   fi
 
   TARGET_DIR="$HOME/hive"
@@ -467,7 +466,7 @@ if [[ $INSTALL_TYPE == "hive" ]]; then
   ensure_dir "$TARGET_DIR/env"
 
   # RL-Agent-ENV
-  info "Erstelle RL-Agent Konfiguration..."
+  info "Creating RL-Agent configuration..."
   cat >"$TARGET_DIR/env/rl-agent.env" <<EOF
 LOGLEVEL=INFO
 WINDOW_SEC=300
@@ -486,7 +485,7 @@ ES_HOST=http://elasticsearch:9200
 EOF
 
   # ADLAH ENV
-  info "Erstelle ADLAH Konfiguration..."
+  info "Creating ADLAH configuration..."
   cat >"$ENV_FILE" <<EOF
 ADLAH_TYPE=HIVE
 ADLAH_USER=$KIBANA_USER
@@ -494,27 +493,27 @@ KIBANA_ENCRYPTION_KEY=$KIBANA_ENCRYPTION_KEY
 EOF
   run_or_die cp "$ENV_FILE" "$TARGET_DIR/.env"
 
-  info "Kopiere Hive-Dateien…"
+  info "Copying Hive files..."
   if ! rsync -a --no-perms --chown=lukas:lukas ./hive/ "$TARGET_DIR/"; then
-    die "Fehler beim Kopieren der Hive-Dateien (Exit-Code: $?)"
+    die "Error copying Hive files (Exit code: $?)"
   fi
   
-  # Prüfe ob Kopieren erfolgreich war
-  check_path_exists "$TARGET_DIR/docker-compose.yml" "Hive Docker Compose Konfiguration im Zielverzeichnis"
+  # Check if copying was successful
+  check_path_exists "$TARGET_DIR/docker-compose.yml" "Hive Docker Compose configuration in target directory"
 
-  info "Erzeuge htpasswd-Datei…"
+  info "Generating htpasswd file..."
   if ! check_command htpasswd; then
     run_or_die sudo apt install -y apache2-utils
   fi
   run_or_die mkdir -p "$TARGET_DIR/nginx"
-  # Falls altes htpasswd versehentlich als Verzeichnis existiert
+  # If old htpasswd exists as directory by mistake
   cleanup_maybe_dir "$TARGET_DIR/nginx/htpasswd"
   run_or_die htpasswd -mbc "$TARGET_DIR/nginx/htpasswd" "$KIBANA_USER" "$KIBANA_PASSWORD"
 
-  info "Generiere TLS-Zertifikat…"
+  info "Generating TLS certificate..."
   CERT_DIR="$TARGET_DIR/nginx/certs"
   ensure_dir "$CERT_DIR"
-  # Alte Artefakte (Datei oder Verzeichnis) entfernen
+  # Remove old artifacts (file or directory)
   cleanup_maybe_dir "$CERT_DIR/selfsigned.key"
   cleanup_maybe_dir "$CERT_DIR/selfsigned.crt"
   run_or_die openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
@@ -522,45 +521,45 @@ EOF
       -out   "$CERT_DIR/selfsigned.crt" \
       -subj "/CN=localhost"
 
-  # Prüfe ob Kibana-Konfiguration existiert
+  # Check if Kibana configuration exists
   if [[ -f "$TARGET_DIR/kibana/dist/kibana.yml" ]]; then
-    sed -i "s|__ENCRYPTION_KEY__|$KIBANA_ENCRYPTION_KEY|g" "$TARGET_DIR/kibana/dist/kibana.yml" || warn "Kibana-Konfiguration konnte nicht aktualisiert werden"
+    sed -i "s|__ENCRYPTION_KEY__|$KIBANA_ENCRYPTION_KEY|g" "$TARGET_DIR/kibana/dist/kibana.yml" || warn "Could not update Kibana configuration"
   else
-    warn "Kibana-Konfigurationsdatei nicht gefunden: $TARGET_DIR/kibana/dist/kibana.yml"
+    warn "Kibana configuration file not found: $TARGET_DIR/kibana/dist/kibana.yml"
   fi
 
-  info "Starte Hive-Stack…"
+  info "Starting Hive stack..."
   run_or_die sudo systemctl enable docker
   run_or_die sudo systemctl start docker
   run_compose_stack "$TARGET_DIR"
 
-  info "Hive ist bereit: http://<deine-ip>:64297"
+  info "Hive is ready: http://<your-ip>:64297"
 
 # ── SENSOR Installation ──────────────────────────────────────────────────────
-else # Dies deckt nur den 'sensor'-Fall ab, da der Typ validiert wurde
-  note "Sensor-Konfiguration konfiguriert."
-  # Interface-Validierung wurde bereits in validate_installation_parameters durchgeführt
+else # This covers only the 'sensor' case, as the type was validated
+  note "Sensor configuration configured."
+  # Interface validation was already performed in validate_installation_parameters
 
-  # Bestätigung
+  # Confirmation
   if [[ "$AUTO_CONFIRM" != "yes" ]]; then
-    read -rp "Installationsmodus SENSOR. Fortfahren? (y/N): " confirm
+    read -rp "Installation mode SENSOR. Continue? (y/N): " confirm
     if [[ "${confirm,,}" != "y" && "${confirm,,}" != "yes" ]]; then
-      info "Installation abgebrochen."
+      info "Installation aborted."
       exit $EXIT_QUIT
     fi
   else
-    info "Automatische Bestätigung aktiviert - fahre mit Sensor-Installation fort"
+    info "Automatic confirmation enabled - continuing with Sensor installation"
   fi
 
   MADCAT_IP=$(ip -4 addr show "$MADCAT_IF" \
               | awk '/inet / {print $2}' | cut -d/ -f1)
-  info "MADCAT nutzt IP $MADCAT_IP"
+  info "MADCAT uses IP $MADCAT_IP"
 
   TARGET_DIR="$HOME/sensor"
   run_or_die mkdir -p "$TARGET_DIR"
 
   # ENV-Datei schreiben
-  info "Erstelle Sensor Konfiguration..."
+  info "Creating Sensor configuration..."
   cat >"$ENV_FILE" <<EOF
 ADLAH_TYPE=SENSOR
 HIVE_IP=$HIVE_IP
@@ -570,49 +569,48 @@ MGMT_INTERFACE=$MGMT_IF
 EOF
   run_or_die cp "$ENV_FILE" "$TARGET_DIR/.env"
 
-  info "Kopiere Sensor-Dateien..."
+  info "Copying Sensor files..."
   if ! rsync -a --no-perms --chown=lukas:lukas sensor/ "$TARGET_DIR/"; then
-    die "Fehler beim Kopieren der Sensor-Dateien (Exit-Code: $?)"
+    die "Error copying Sensor files (Exit code: $?)"
   fi
   
-  # NEU: Sicherstellen, dass das Umleitungsskript ausführbar ist
+  # NEW: Ensure redirect script is executable
   if [ -f "$TARGET_DIR/redirect_attacker.sh" ]; then
     chmod +x "$TARGET_DIR/redirect_attacker.sh"
-    info "Umleitungsskript ausführbar gemacht."
+    info "Made redirect script executable."
   fi
 
   # Prüfe ob Kopieren erfolgreich war
-  check_path_exists "$TARGET_DIR/docker-compose.yml" "Sensor Docker Compose Konfiguration im Zielverzeichnis"
+  check_path_exists "$TARGET_DIR/docker-compose.yml" "Sensor Docker Compose configuration in target directory"
   
   run_or_die sudo mkdir -p /var/log/madcat && sudo chown "$USER_NAME":"$USER_NAME" /var/log/madcat
 
-  # Pfad-Fix für Run-Script
+  # Path fix for run script
   MADCAT_RUN="$TARGET_DIR/madcat/scripts/run_madcat.sh"
   if [[ -f $MADCAT_RUN ]]; then
-    info "Passe MADCAT Run-Script an..."
-    # 1) Pfad-Fix & sudo raus
+    info "Adjusting MADCAT run script..."
+    # 1) Path fix & remove sudo
     run_or_die sed -i 's|/opt/madcat/data|/var/log/madcat|g; s/\bsudo\b //g' "$MADCAT_RUN"
-    # 2) NEU → Interface-Parameter injizieren
+    # 2) NEW → Inject interface parameter
     run_or_die sed -i -E 's|^(MADCAT_CMD="madcat )|\1-i ${MADCAT_INTERFACE} |' "$MADCAT_RUN"
     run_or_die chmod +x "$MADCAT_RUN"
   fi
 
-  info "Installiere SSH-Server…"
+  info "Installing SSH server..."
   run_or_die sudo apt install -y openssh-server
   run_or_die sudo systemctl enable ssh
   run_or_die sudo systemctl start ssh
 
-  info "Starte Sensor-Stack…"
+  info "Starting Sensor stack..."
   run_or_die sudo systemctl enable docker
   run_or_die sudo systemctl start docker
   run_compose_stack "$TARGET_DIR"
 
   if docker exec madcat ps aux | grep madcat | grep -v grep; then
-    info "Sensor ist bereit. Jetzt deploy.sh auf dem Hive ausführen."
+    info "Sensor is ready. Now run deploy.sh on the Hive."
   else
-    warn "MADCAT-Prozess läuft möglicherweise nicht korrekt"
+    warn "MADCAT process might not be running correctly"
   fi
 fi
 
-info "Installation erfolgreich abgeschlossen!"
-
+info "Installation completed successfully!"
