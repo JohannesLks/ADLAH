@@ -1,6 +1,7 @@
 # ADLAH
 Adaptive Deep Learning Anomaly Detection Honeynet (*ADLAH*) 
 
+Read the preprint paper: https://doi.org/10.48550/arXiv.2512.07827
 ## Read the [Docs](https://docs.adlah.dev)
 
 ## TL;DR
